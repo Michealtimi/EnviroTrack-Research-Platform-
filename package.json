@@ -1,29 +1,45 @@
 {
-  "name": "yes",
+  "name": "envirotrack",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Environmental Data API and Dashboard for MSc research",
+  "main": "dist/main.js",
+  "type": "module",
   "license": "MIT",
   "scripts": {
-    "start:dev": "nodemon --watch src --ext ts,json --exec ts-node src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "lint": "eslint '{src,test}/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/swagger": "^11.2.0",
+    "@prisma/client": "^6.16.2",
+    "axios": "^1.12.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.2",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.4",
+    "@nestjs/cli": "^11.2.0",
+    "@nestjs/schematics": "^11.1.6",
     "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",
+    "eslint": "^8.45.0",
     "nodemon": "^3.1.10",
     "prisma": "^6.16.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.16.2",
-    "axios": "^1.12.2",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "pg": "^8.16.3"
+    "typescript": "^5.9.2",
+    "prettier": "^3.0.0"
   }
 }

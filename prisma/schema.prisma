@@ -20,14 +20,17 @@ model Station {
 }
 
 model AirQuality {
-  id          String   @id @default(uuid())
-  parameter   String
-  value       Float
-  unit        String
-  recordedAt  DateTime
+  id          String    @id @default(uuid())
+  // FIX: These new fields are added to match your service and repository code
+  pm25        Float
+  pm10        Float
+  co          Float?  // Using Float? to indicate this field is optional
+  no2         Float?  // Using Float? to indicate this field is optional
+  o3          Float?  // Added O3 as it was used in your aggregation logic
+  
   stationId   Int
-  station     Station  @relation(fields: [stationId], references: [id])
-  createdAt   DateTime @default(now())
+  station     Station   @relation(fields: [stationId], references: [id])
+  createdAt   DateTime  @default(now())
 }
 
 model AuditLog {

@@ -1,44 +1,24 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "commonjs",
-    "target": "esnext",
-    "types": ["node"],
-    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-
-    // Recommended Options
-    "strict": true,
-    "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
+    "target": "ES2022",                  // Modern JS for Node 18+
+    "module": "ESNext",                  // Use ES modules for NestJS
+    "moduleResolution": "node",
+    "lib": ["ES2022"],                   // Modern JS features
+    "rootDir": "./src",                  // Source folder
+    "outDir": "./dist",                  // Compiled JS output
+    "strict": true,                      // Full TypeScript strict mode
+    "esModuleInterop": true,             // Allows 'import fs from "fs"'
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-  }
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,      // Needed for NestJS
+    "emitDecoratorMetadata": true,       // Needed for NestJS DI
+    "strictPropertyInitialization": false,
+    "sourceMap": true
+  },
+  "exclude": ["node_modules", "dist"]
 }
