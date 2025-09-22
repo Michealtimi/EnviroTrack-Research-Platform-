@@ -8,13 +8,15 @@ import {
 import { StationRepository } from './station.repository.js';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
 
-
 @Injectable()
 export class StationService {
   private readonly logger = new Logger(StationService.name);
 
   constructor(private readonly stationRepo: StationRepository) {}
 
+  // -----------------------------
+  // ✅ Create a new local station
+  // -----------------------------
   async createStation(data: CreateStationDto) {
     this.logger.log(`Attempting to create station: ${JSON.stringify(data)}`);
     try {
@@ -28,15 +30,16 @@ export class StationService {
       this.logger.log(`Station created successfully with ID: ${station.id}`);
       return station;
     } catch (error: unknown) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
+      if (error instanceof BadRequestException) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to create station. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to create station. Please try again later.');
     }
   }
 
+  // -----------------------------
+  // ✅ Fetch all local stations
+  // -----------------------------
   async getAllStations() {
     this.logger.log('Fetching all stations...');
     try {
@@ -50,6 +53,9 @@ export class StationService {
     }
   }
 
+  // -----------------------------
+  // ✅ Fetch station by ID
+  // -----------------------------
   async getStationById(id: number) {
     this.logger.log(`Fetching station by ID: ${id}`);
     try {
@@ -61,15 +67,16 @@ export class StationService {
       this.logger.log(`Station found: ${station.id}`);
       return station;
     } catch (error: unknown) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to fetch station by ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to retrieve station.');
     }
   }
 
+  // -----------------------------
+  // ✅ Fetch stations by city
+  // -----------------------------
   async getStationsByCity(city: string) {
     this.logger.log(`Fetching stations in city: ${city}`);
     try {
@@ -83,6 +90,9 @@ export class StationService {
     }
   }
 
+  // -----------------------------
+  // ✅ Update station
+  // -----------------------------
   async updateStation(id: number, data: UpdateStationDto) {
     this.logger.log(`Updating station ID: ${id}`);
     try {
@@ -95,15 +105,16 @@ export class StationService {
       this.logger.log(`Station updated successfully: ${updated.id}`);
       return updated;
     } catch (error: unknown) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to update station ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to update station.');
     }
   }
 
+  // -----------------------------
+  // ✅ Delete station
+  // -----------------------------
   async deleteStation(id: number) {
     this.logger.log(`Attempting to delete station ID: ${id}`);
     try {
@@ -116,12 +127,35 @@ export class StationService {
       this.logger.log(`Station deleted successfully: ${id}`);
       return { message: `Station ${id} deleted successfully` };
     } catch (error: unknown) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to delete station.');
+    }
+  }
+
+  // -----------------------------
+  // ✅ NEW: Unified stations (local + OpenAQ)
+  // -----------------------------
+  async getUnifiedStations(
+    city?: string,
+    country?: string,
+    source?: 'local' | 'openaq',
+    page = 1,
+    limit = 10,
+  ) {
+    this.logger.log(
+      `Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`,
+    );
+    try {
+      return await this.stationRepo.findUnified(
+        { city, country, source },
+        { page, limit },
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to fetch unified stations. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to retrieve unified stations.');
     }
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Station } from '@prisma/client';
+import { Prisma, Station } from '@prisma/client';
+import { UnifiedStationResponseDto } from './dto/unified-station-response.dto.js';
 
 @Injectable()
 export class StationRepository {
@@ -104,6 +105,83 @@ export class StationRepository {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to delete station from the database.');
+    }
+  }
+
+  async findUnified(
+    filter?: { city?: string; country?: string; source?: 'local' | 'openaq' },
+    pagination?: { page: number; limit: number },
+  ): Promise<{ data: UnifiedStationResponseDto[]; total: number }> {
+    this.logger.log(`Finding unified stations with filter: ${JSON.stringify(filter)}`);
+    const { city, country, source } = filter || {};
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.StationWhereInput = {
+      ...(city && { city: { contains: city, mode: 'insensitive' } }),
+      ...(country && { country }),
+      ...(source && { source }),
+    };
+
+    try {
+      const [stations, total] = await this.prisma.$transaction([
+        this.prisma.station.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.station.count({ where }),
+      ]);
+
+      const data = stations.map((s) => ({
+        id: s.source === 'openaq' ? `openaq-${s.externalId}` : `local-${s.id}`,
+        name: s.name,
+        city: s.city,
+        country: s.country,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        source: s.source as 'local' | 'openaq',
+      }));
+
+      return { data, total };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to find unified stations. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to retrieve unified stations.');
+    }
+  }
+
+  async upsertFromOpenAQ(stationData: {
+    openaqStationId: string;
+    name: string;
+    city: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  }): Promise<Station> {
+    this.logger.log(`🔄 Upserting OpenAQ station [${stationData.openaqStationId}] (${stationData.name})`);
+
+    const { openaqStationId, ...restOfData } = stationData;
+
+    try {
+      const result = await this.prisma.station.upsert({
+        // NOTE: This requires `externalId` to have a @unique constraint in your schema.prisma file.
+        where: { externalId: openaqStationId },
+        update: restOfData,
+        create: {
+          ...restOfData,
+          externalId: openaqStationId,
+          source: 'openaq',
+        },
+      });
+
+      this.logger.log(`✅ Synced station: ${result.name} (${result.city})`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`❌ Failed to upsert OpenAQ station ${openaqStationId}. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to sync OpenAQ station.');
     }
   }
 }

@@ -35,23 +35,16 @@ let AirQualityService = AirQualityService_1 = class AirQualityService {
                 this.logger.warn(`Creation failed: Station with ID '${stationId}' not found.`);
                 throw new NotFoundException(`Station with ID ${stationId} not found`);
             }
-            const { pm25, pm10, co, no2 } = data;
-            const recordedAt = new Date();
-            // Since the schema is "tall", we create a reading for each parameter.
-            const readingsData = [
-                { stationId, parameter: 'pm25', value: pm25, unit: 'µg/m³', recordedAt },
-                { stationId, parameter: 'pm10', value: pm10, unit: 'µg/m³', recordedAt },
-                { stationId, parameter: 'co', value: co, unit: 'ppm', recordedAt },
-                { stationId, parameter: 'no2', value: no2, unit: 'ppm', recordedAt },
-            ];
+            const { pm25, pm10, co, no2, o3 } = data;
+            // The schema is "wide", so we create a single reading record with all parameters.
+            const readingData = { stationId, pm25, pm10, co, no2, o3 };
             // Step 2: Save the reading
-            // We assume the repository's `create` method can handle this or we'd need a `createMany`.
-            // For this fix, we'll create them one by one. In a real-world scenario, you'd use a transaction.
-            const createdReadings = await Promise.all(readingsData.map(readingData => this.airQualityRepo.create(readingData)));
+            const createdReading = await this.airQualityRepo.create(readingData);
             this.logger.log(`Reading created successfully for station: ${stationId}`);
-            // NOTE: The response DTO is "wide" and doesn't match the "tall" created records.
-            // Returning the array of created records for now. You may want to refactor the response DTO.
-            return createdReadings;
+            // The response DTO is "wide" and now matches the "wide" created record.
+            return plainToInstance(AirQualityReadingResponseDto, createdReading, {
+                excludeExtraneousValues: true,
+            });
         }
         catch (error) {
             // FIX: Properly handle 'unknown' error type.
@@ -154,8 +147,8 @@ let AirQualityService = AirQualityService_1 = class AirQualityService {
         try {
             // FIX: Use the `findAll` method with a filter to fetch the readings.
             const readings = await this.airQualityRepo.findAll({ city });
-            // FIX: Explicitly type the 'r' parameter to resolve the TS7006 error.
-            const hazardous = readings.filter((r) => (r.parameter === 'pm25' && r.value > 25) || (r.parameter === 'pm10' && r.value > 50));
+            // FIX: The AirQuality model is "wide", so filter on properties like `pm25` and `pm10` directly.
+            const hazardous = readings.filter((r) => r.pm25 > 25 || r.pm10 > 50);
             this.logger.log(`Found ${hazardous.length} hazardous readings in ${city}`);
             return plainToInstance(AirQualityReadingResponseDto, hazardous, {
                 excludeExtraneousValues: true,

@@ -43,8 +43,8 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
     async findById(id) {
         this.logger.log(`Fetching reading by ID: ${id}`);
         try {
-            // FIX: Your Prisma schema likely uses `id: Int @id` which matches `number`
-            // If your schema uses `String` for ID, you must pass a string here.
+            // FIX: The Prisma schema for AirQuality uses a `String` ID (UUID).
+            // The parameter type must be `string` to match.
             const result = await this.prisma.airQuality.findUnique({ where: { id } });
             if (result) {
                 this.logger.log(`Found reading with ID: ${id}`);

@@ -1,44 +1,93 @@
-// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Station {
-  id        Int          @id @default(autoincrement())
-  name      String
-  city      String
-  country   String
-  latitude  Float
-  longitude Float
-  readings  AirQuality[] // relation: one station -> many readings
-  createdAt DateTime     @default(now())
+  id          Int          @id @default(autoincrement())
+  name        String
+  city        String
+  country     String
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime     @default(now())
+  readings    AirQuality[]
+  // optional link to OpenAQ station if synced
+  openaqStationId String?  @unique
 }
 
 model AirQuality {
-  id          String    @id @default(uuid())
-  // FIX: These new fields are added to match your service and repository code
-  pm25        Float
-  pm10        Float
-  co          Float?  // Using Float? to indicate this field is optional
-  no2         Float?  // Using Float? to indicate this field is optional
-  o3          Float?  // Added O3 as it was used in your aggregation logic
-  
-  stationId   Int
-  station     Station   @relation(fields: [stationId], references: [id])
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(uuid())
+  stationId Int
+  createdAt DateTime @default(now())
+  co        Float?
+  no2       Float?
+  o3        Float?
+  pm10      Float
+  pm25      Float
+  station   Station  @relation(fields: [stationId], references: [id])
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?  // null if public/system
-  action      String
-  resource    String
-  resourceId  String
-  changes     Json
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String
+  changes    Json
+  createdAt  DateTime @default(now())
+}
+
+/* ---------------------------
+   🔹 OpenAQ-specific models
+--------------------------- */
+
+model OpenAQStation {
+  id        String               @id                // OpenAQ's locationId
+  name      String
+  city      String?
+  country   String?
+  latitude  Float?
+  longitude Float?
+  provider  String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  measurements OpenAQMeasurement[]
+}
+
+model OpenAQParameter {
+  id          Int                 @id                // OpenAQ parameter id
+  name        String              @unique            // e.g. "pm25"
+  displayName String
+  units       String
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  measurements OpenAQMeasurement[]
+}
+
+model OpenAQMeasurement {
+  id          String          @id @default(uuid())
+  stationId   String
+  parameterId Int
+  value       Float
+  dateUtc     DateTime
   createdAt   DateTime @default(now())
+
+  station     OpenAQStation   @relation(fields: [stationId], references: [id])
+  parameter   OpenAQParameter @relation(fields: [parameterId], references: [id])
+}
+
+model OpenAQSyncLog {
+  id        String   @id @default(uuid())
+  resource  String   // e.g. "stations", "parameters", "measurements"
+  status    String   // success / failed
+  details   Json?
+  createdAt DateTime @default(now())
 }

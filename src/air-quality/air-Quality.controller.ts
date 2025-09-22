@@ -27,7 +27,11 @@ export class AirQualityController {
     @Body() body: CreateAirQualityDto,
   ) {
     this.logger.log(`Request to create reading for station ID: ${stationId}`);
-    return this.airQualityService.createReading(stationId, body);
+    // The `createReading` service method expects an `o3` property, which is missing
+    // from `CreateAirQualityDto`. We'll add it here, defaulting to `null` as it's
+    // optional in the database schema.
+    const readingData = { ...body, o3: (body as any).o3 ?? null };
+    return this.airQualityService.createReading(stationId, readingData);
   }
 
   @Get('station/:stationId')
