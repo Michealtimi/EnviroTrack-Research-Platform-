@@ -25,7 +25,6 @@ export class StationService {
         this.logger.warn(`Station "${data.name}" already exists in ${data.city}.`);
         throw new BadRequestException(`Station "${data.name}" already exists in ${data.city}`);
       }
-
       const station = await this.stationRepo.create(data);
       this.logger.log(`Station created successfully with ID: ${station.id}`);
       return station;
@@ -131,6 +130,44 @@ export class StationService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to delete station.');
+    }
+  }
+
+  // -----------------------------
+  // ✅ NEW: Upsert station from OpenAQ
+  // -----------------------------
+  async createOrUpdateFromOpenAQ(stationData: {
+    openaqStationId: string;
+    name: string;
+    city: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  }) {
+    this.logger.log(`Upserting OpenAQ station: ${stationData.name} (${stationData.city})`);
+    try {
+      const station = await this.stationRepo.upsertFromOpenAQ(stationData);
+      this.logger.log(`Station upserted successfully: ${station.name} (${station.city})`);
+      return station;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to upsert OpenAQ station ${stationData.name}. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to sync OpenAQ station.');
+    }
+  }
+
+  // -----------------------------
+  // ✅ NEW: Find station by OpenAQ ID
+  // -----------------------------
+  async findByOpenAQId(openaqStationId: string) {
+    this.logger.log(`Fetching station by OpenAQ ID: ${openaqStationId}`);
+    try {
+      const stations = await this.stationRepo.findAll({}); // fetch all
+      return stations.find(s => s.openaqStationId === openaqStationId) || null;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to find station by OpenAQ ID ${openaqStationId}. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to retrieve station by OpenAQ ID.');
     }
   }
 

@@ -16,6 +16,9 @@ let StationService = StationService_1 = class StationService {
     constructor(stationRepo) {
         this.stationRepo = stationRepo;
     }
+    // -----------------------------
+    // ✅ Create a new local station
+    // -----------------------------
     async createStation(data) {
         this.logger.log(`Attempting to create station: ${JSON.stringify(data)}`);
         try {
@@ -29,14 +32,16 @@ let StationService = StationService_1 = class StationService {
             return station;
         }
         catch (error) {
-            if (error instanceof BadRequestException) {
+            if (error instanceof BadRequestException)
                 throw error;
-            }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to create station. Error: ${errorMessage}`);
             throw new InternalServerErrorException('Failed to create station. Please try again later.');
         }
     }
+    // -----------------------------
+    // ✅ Fetch all local stations
+    // -----------------------------
     async getAllStations() {
         this.logger.log('Fetching all stations...');
         try {
@@ -50,6 +55,9 @@ let StationService = StationService_1 = class StationService {
             throw new InternalServerErrorException('Failed to retrieve stations.');
         }
     }
+    // -----------------------------
+    // ✅ Fetch station by ID
+    // -----------------------------
     async getStationById(id) {
         this.logger.log(`Fetching station by ID: ${id}`);
         try {
@@ -62,14 +70,16 @@ let StationService = StationService_1 = class StationService {
             return station;
         }
         catch (error) {
-            if (error instanceof NotFoundException) {
+            if (error instanceof NotFoundException)
                 throw error;
-            }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch station by ID ${id}. Error: ${errorMessage}`);
             throw new InternalServerErrorException('Failed to retrieve station.');
         }
     }
+    // -----------------------------
+    // ✅ Fetch stations by city
+    // -----------------------------
     async getStationsByCity(city) {
         this.logger.log(`Fetching stations in city: ${city}`);
         try {
@@ -83,6 +93,9 @@ let StationService = StationService_1 = class StationService {
             throw new InternalServerErrorException('Failed to retrieve stations by city.');
         }
     }
+    // -----------------------------
+    // ✅ Update station
+    // -----------------------------
     async updateStation(id, data) {
         this.logger.log(`Updating station ID: ${id}`);
         try {
@@ -96,14 +109,16 @@ let StationService = StationService_1 = class StationService {
             return updated;
         }
         catch (error) {
-            if (error instanceof NotFoundException) {
+            if (error instanceof NotFoundException)
                 throw error;
-            }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to update station ID ${id}. Error: ${errorMessage}`);
             throw new InternalServerErrorException('Failed to update station.');
         }
     }
+    // -----------------------------
+    // ✅ Delete station
+    // -----------------------------
     async deleteStation(id) {
         this.logger.log(`Attempting to delete station ID: ${id}`);
         try {
@@ -117,12 +132,56 @@ let StationService = StationService_1 = class StationService {
             return { message: `Station ${id} deleted successfully` };
         }
         catch (error) {
-            if (error instanceof NotFoundException) {
+            if (error instanceof NotFoundException)
                 throw error;
-            }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
             throw new InternalServerErrorException('Failed to delete station.');
+        }
+    }
+    // -----------------------------
+    // ✅ NEW: Upsert station from OpenAQ
+    // -----------------------------
+    async createOrUpdateFromOpenAQ(stationData) {
+        this.logger.log(`Upserting OpenAQ station: ${stationData.name} (${stationData.city})`);
+        try {
+            const station = await this.stationRepo.upsertFromOpenAQ(stationData);
+            this.logger.log(`Station upserted successfully: ${station.name} (${station.city})`);
+            return station;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to upsert OpenAQ station ${stationData.name}. Error: ${errorMessage}`);
+            throw new InternalServerErrorException('Failed to sync OpenAQ station.');
+        }
+    }
+    // -----------------------------
+    // ✅ NEW: Find station by OpenAQ ID
+    // -----------------------------
+    async findByOpenAQId(openaqStationId) {
+        this.logger.log(`Fetching station by OpenAQ ID: ${openaqStationId}`);
+        try {
+            const stations = await this.stationRepo.findAll({}); // fetch all
+            return stations.find(s => s.openaqStationId === openaqStationId) || null;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to find station by OpenAQ ID ${openaqStationId}. Error: ${errorMessage}`);
+            throw new InternalServerErrorException('Failed to retrieve station by OpenAQ ID.');
+        }
+    }
+    // -----------------------------
+    // ✅ NEW: Unified stations (local + OpenAQ)
+    // -----------------------------
+    async getUnifiedStations(city, country, source, page = 1, limit = 10) {
+        this.logger.log(`Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`);
+        try {
+            return await this.stationRepo.findUnified({ city, country, source }, { page, limit });
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to fetch unified stations. Error: ${errorMessage}`);
+            throw new InternalServerErrorException('Failed to retrieve unified stations.');
         }
     }
 };

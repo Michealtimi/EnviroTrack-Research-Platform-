@@ -8,36 +8,41 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { ApiProperty } from '@nestjs/swagger';
-export class OpenAQStationDto {
+export class UnifiedStationResponseDto {
     id;
     name;
     city;
     country;
     latitude;
     longitude;
+    source;
 }
 __decorate([
-    ApiProperty({ description: 'Station ID' }),
-    __metadata("design:type", Number)
-], OpenAQStationDto.prototype, "id", void 0);
-__decorate([
-    ApiProperty({ description: 'Station name' }),
+    ApiProperty({ example: 'local-1', description: 'Unique station ID (local or OpenAQ)' }),
     __metadata("design:type", String)
-], OpenAQStationDto.prototype, "name", void 0);
+], UnifiedStationResponseDto.prototype, "id", void 0);
 __decorate([
-    ApiProperty({ description: 'City where station is located' }),
+    ApiProperty({ example: 'Lagos Main Station' }),
     __metadata("design:type", String)
-], OpenAQStationDto.prototype, "city", void 0);
+], UnifiedStationResponseDto.prototype, "name", void 0);
 __decorate([
-    ApiProperty({ description: 'Country code' }),
+    ApiProperty({ example: 'Lagos' }),
     __metadata("design:type", String)
-], OpenAQStationDto.prototype, "country", void 0);
+], UnifiedStationResponseDto.prototype, "city", void 0);
 __decorate([
-    ApiProperty({ description: 'Latitude' }),
-    __metadata("design:type", Number)
-], OpenAQStationDto.prototype, "latitude", void 0);
+    ApiProperty({ example: 'NG' }),
+    __metadata("design:type", String)
+], UnifiedStationResponseDto.prototype, "country", void 0);
 __decorate([
-    ApiProperty({ description: 'Longitude' }),
+    ApiProperty({ example: 6.5244 }),
     __metadata("design:type", Number)
-], OpenAQStationDto.prototype, "longitude", void 0);
-//# sourceMappingURL=openaq-station.dto.js.map
+], UnifiedStationResponseDto.prototype, "latitude", void 0);
+__decorate([
+    ApiProperty({ example: 3.3792 }),
+    __metadata("design:type", Number)
+], UnifiedStationResponseDto.prototype, "longitude", void 0);
+__decorate([
+    ApiProperty({ example: 'local', enum: ['local', 'openaq'] }),
+    __metadata("design:type", String)
+], UnifiedStationResponseDto.prototype, "source", void 0);
+//# sourceMappingURL=unified-station-response.dto.js.map
