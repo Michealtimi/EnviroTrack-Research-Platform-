@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,11 +9,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var StationRepository_1;
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StationRepository = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_js_1 = require("../prisma/prisma.service.js");
 let StationRepository = StationRepository_1 = class StationRepository {
     prisma;
-    logger = new Logger(StationRepository_1.name);
+    logger = new common_1.Logger(StationRepository_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -26,7 +29,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to create station. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to create station in the database.');
+            throw new common_1.InternalServerErrorException('Failed to create station in the database.');
         }
     }
     async findAll(filter) {
@@ -45,7 +48,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch all stations. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve stations from the database.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve stations from the database.');
         }
     }
     async findById(id) {
@@ -63,7 +66,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch station by ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve station from the database.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve station from the database.');
         }
     }
     async findByCity(city) {
@@ -76,7 +79,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch stations by city ${city}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve stations by city from the database.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve stations by city from the database.');
         }
     }
     async findByNameAndCity(name, city) {
@@ -87,7 +90,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Database query failed for station check. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Database error during station lookup.');
+            throw new common_1.InternalServerErrorException('Database error during station lookup.');
         }
     }
     async update(id, data) {
@@ -100,7 +103,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to update station ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to update station in the database.');
+            throw new common_1.InternalServerErrorException('Failed to update station in the database.');
         }
     }
     async delete(id) {
@@ -113,7 +116,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to delete station from the database.');
+            throw new common_1.InternalServerErrorException('Failed to delete station from the database.');
         }
     }
     async findFirst(where) {
@@ -124,7 +127,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Database query failed for findFirst station. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Database error during station lookup.');
+            throw new common_1.InternalServerErrorException('Database error during station lookup.');
         }
     }
     async findUnified(filter, pagination) {
@@ -161,7 +164,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to find unified stations. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve unified stations.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve unified stations.');
         }
     }
     async upsertFromOpenAQ(stationData) {
@@ -188,13 +191,13 @@ let StationRepository = StationRepository_1 = class StationRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`❌ Failed to upsert OpenAQ station ${externalId}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to sync OpenAQ station.');
+            throw new common_1.InternalServerErrorException('Failed to sync OpenAQ station.');
         }
     }
 };
-StationRepository = StationRepository_1 = __decorate([
-    Injectable(),
-    __metadata("design:paramtypes", [PrismaService])
+exports.StationRepository = StationRepository;
+exports.StationRepository = StationRepository = StationRepository_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_js_1.PrismaService])
 ], StationRepository);
-export { StationRepository };
 //# sourceMappingURL=station.repository.js.map

@@ -16,8 +16,15 @@ model Station {
   longitude   Float
   createdAt   DateTime     @default(now())
   readings    AirQuality[]
+
   // optional link to OpenAQ station if synced
   openaqStationId String?  @unique
+
+  // ✅ Added: field to distinguish local vs OpenAQ stations
+  source      String       @default("local") // "local" | "openaq"
+
+  // ✅ Added: external ID (used when syncing with OpenAQ)
+  externalId  String?      @unique
 }
 
 model AirQuality {
@@ -30,6 +37,9 @@ model AirQuality {
   pm10      Float
   pm25      Float
   station   Station  @relation(fields: [stationId], references: [id])
+
+  // ✅ Added: track where this reading came from
+  source    String   @default("local") // "local" | "openaq"
 }
 
 model AuditLog {

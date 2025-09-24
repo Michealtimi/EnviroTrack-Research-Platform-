@@ -41,6 +41,10 @@ export class StationResponseDto {
   @Expose()
   id: number;
 
+  @ApiProperty({ description: 'The source of the station data', example: 'local', enum: ['local', 'openaq'] })
+  @Expose()
+  source: 'local' | 'openaq';
+
   @ApiProperty({ description: 'Name of the monitoring station', example: 'London Central' })
   @Expose()
   name: string;
@@ -64,6 +68,10 @@ export class StationResponseDto {
   @ApiProperty({ description: 'Timestamp when the station was created', example: '2025-09-20T14:00:00.000Z' })
   @Expose()
   createdAt: Date;
+
+  @ApiProperty({ description: 'External ID if from another source like OpenAQ', example: '12345', required: false })
+  @Expose()
+  externalId: string | null;
 }
 
 

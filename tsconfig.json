@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2022",                  // Modern JS for Node 18+
-    "module": "ESNext",                  // Use ES modules for NestJS
+    "target": "ES2022",
+    "module": "CommonJS",
     "moduleResolution": "node",
-    "lib": ["ES2022"],                   // Modern JS features
-    "rootDir": "./src",                  // Source folder
-    "outDir": "./dist",                  // Compiled JS output
-    "strict": true,                      // Full TypeScript strict mode
-    "esModuleInterop": true,             // Allows 'import fs from "fs"'
+    "lib": ["ES2022"],
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noUnusedLocals": true,
@@ -15,8 +15,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "experimentalDecorators": true,      // Needed for NestJS
-    "emitDecoratorMetadata": true,       // Needed for NestJS DI
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "sourceMap": true
   },

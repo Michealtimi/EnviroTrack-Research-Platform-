@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -7,30 +8,34 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var OpenAQService_1;
-import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
-import { StationRepository } from '../stations/station.repository.js';
-import { StationService } from '../stations/station.service.js';
-import { AirQualityService } from '../air-quality/air-quality.service.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OpenAQService = void 0;
+const common_1 = require("@nestjs/common");
+const axios_1 = __importDefault(require("axios"));
+const station_service_js_1 = require("../stations/station.service.js");
+const air_quality_service_js_1 = require("../air-quality/air-quality.service.js");
 let OpenAQService = OpenAQService_1 = class OpenAQService {
-    stationRepo;
     stationService;
     airQualityService;
-    logger = new Logger(OpenAQService_1.name);
+    logger = new common_1.Logger(OpenAQService_1.name);
     baseUrl = 'https://api.openaq.org/v3';
-    constructor(stationRepo, stationService, airQualityService) {
-        this.stationRepo = stationRepo;
+    constructor(stationService, airQualityService) {
         this.stationService = stationService;
         this.airQualityService = airQualityService;
     }
-    /** Sync parameters from OpenAQ */
+    async findStationByNameAndCity(name, city) {
+        return this.stationService.findByNameAndCity(name, city);
+    }
     async syncParameters(params) {
         this.logger.log(`Syncing ${params.length} OpenAQ parameters...`);
         try {
             const results = [];
             for (const param of params) {
-                const res = await axios.get(`${this.baseUrl}/parameters`, { params: param });
+                const res = await axios_1.default.get(`${this.baseUrl}/parameters`, { params: param });
                 results.push(...res.data.results);
             }
             return { success: true, parametersSynced: results.length, data: results };
@@ -41,15 +46,13 @@ let OpenAQService = OpenAQService_1 = class OpenAQService {
             throw error;
         }
     }
-    /** Sync measurements from OpenAQ */
     async syncMeasurements(measurements) {
         this.logger.log(`Syncing ${measurements.length} OpenAQ measurements...`);
         try {
             const results = [];
             for (const measurement of measurements) {
-                const res = await axios.get(`${this.baseUrl}/measurements`, { params: measurement });
+                const res = await axios_1.default.get(`${this.baseUrl}/measurements`, { params: measurement });
                 results.push(...res.data.results);
-                // Save each measurement to the database
                 for (const m of res.data.results) {
                     const station = await this.stationService.findByExternalId(m.locationId?.toString());
                     if (!station)
@@ -71,7 +74,6 @@ let OpenAQService = OpenAQService_1 = class OpenAQService {
             throw error;
         }
     }
-    /** Full sync of parameters + measurements */
     async fullOpenAQSync(data) {
         this.logger.log(`Starting full OpenAQ sync...`);
         await this.syncParameters(data.parameters);
@@ -80,11 +82,10 @@ let OpenAQService = OpenAQService_1 = class OpenAQService {
         return { success: true };
     }
 };
-OpenAQService = OpenAQService_1 = __decorate([
-    Injectable(),
-    __metadata("design:paramtypes", [StationRepository,
-        StationService,
-        AirQualityService])
+exports.OpenAQService = OpenAQService;
+exports.OpenAQService = OpenAQService = OpenAQService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [station_service_js_1.StationService,
+        air_quality_service_js_1.AirQualityService])
 ], OpenAQService);
-export { OpenAQService };
 //# sourceMappingURL=openaq.service.js.map

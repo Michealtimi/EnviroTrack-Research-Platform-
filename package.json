@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Environmental Data API and Dashboard for MSc research",
   "main": "dist/main.js",
-  "type": "module",
   "license": "MIT",
   "scripts": {
     "start": "nest start",

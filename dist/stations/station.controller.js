@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -11,13 +12,15 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var StationController_1;
-import { Controller, Get, Post, Patch, Delete, Param, Body, ParseIntPipe, Query, Logger, } from '@nestjs/common';
-import { StationService } from './station.service.js';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StationController = void 0;
+const common_1 = require("@nestjs/common");
+const station_service_js_1 = require("./station.service.js");
+const swagger_1 = require("@nestjs/swagger");
+const create_station_dto_js_1 = require("./dto/create-station.dto.js");
 let StationController = StationController_1 = class StationController {
     stationService;
-    logger = new Logger(StationController_1.name);
+    logger = new common_1.Logger(StationController_1.name);
     constructor(stationService) {
         this.stationService = stationService;
     }
@@ -71,77 +74,77 @@ let StationController = StationController_1 = class StationController {
         return this.stationService.getUnifiedStations(city, country, source, page, limit);
     }
 };
+exports.StationController = StationController;
 __decorate([
-    Post(),
-    ApiOperation({ summary: 'Create a new station' }),
-    ApiBody({ type: CreateStationDto }),
-    __param(0, Body()),
+    (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new station' }),
+    (0, swagger_1.ApiBody)({ type: create_station_dto_js_1.CreateStationDto }),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [CreateStationDto]),
+    __metadata("design:paramtypes", [create_station_dto_js_1.CreateStationDto]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "create", null);
 __decorate([
-    Get(),
-    ApiOperation({ summary: 'Get all stations' }),
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all stations' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "findAll", null);
 __decorate([
-    Get(':id'),
-    ApiOperation({ summary: 'Get station by ID' }),
-    __param(0, Param('id', ParseIntPipe)),
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get station by ID' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "findOne", null);
 __decorate([
-    Get('city/:city'),
-    ApiOperation({ summary: 'Get stations in a city' }),
-    __param(0, Param('city')),
+    (0, common_1.Get)('city/:city'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get stations in a city' }),
+    __param(0, (0, common_1.Param)('city')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "findByCity", null);
 __decorate([
-    Patch(':id'),
-    ApiOperation({ summary: 'Update a station' }),
-    ApiBody({ type: UpdateStationDto }),
-    __param(0, Param('id', ParseIntPipe)),
-    __param(1, Body()),
+    (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a station' }),
+    (0, swagger_1.ApiBody)({ type: create_station_dto_js_1.UpdateStationDto }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, UpdateStationDto]),
+    __metadata("design:paramtypes", [Number, create_station_dto_js_1.UpdateStationDto]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "update", null);
 __decorate([
-    Delete(':id'),
-    ApiOperation({ summary: 'Delete a station' }),
-    __param(0, Param('id', ParseIntPipe)),
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a station' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "remove", null);
 __decorate([
-    Get('unified'),
-    ApiOperation({ summary: 'Get unified list of stations (local + OpenAQ)' }),
-    ApiQuery({ name: 'city', required: false }),
-    ApiQuery({ name: 'country', required: false }),
-    ApiQuery({ name: 'source', required: false, enum: ['local', 'openaq'] }),
-    ApiQuery({ name: 'page', required: false, type: Number }),
-    ApiQuery({ name: 'limit', required: false, type: Number }),
-    __param(0, Query('city')),
-    __param(1, Query('country')),
-    __param(2, Query('source')),
-    __param(3, Query('page')),
-    __param(4, Query('limit')),
+    (0, common_1.Get)('unified'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get unified list of stations (local + OpenAQ)' }),
+    (0, swagger_1.ApiQuery)({ name: 'city', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'country', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'source', required: false, enum: ['local', 'openaq'] }),
+    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
+    __param(0, (0, common_1.Query)('city')),
+    __param(1, (0, common_1.Query)('country')),
+    __param(2, (0, common_1.Query)('source')),
+    __param(3, (0, common_1.Query)('page')),
+    __param(4, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "getUnifiedStations", null);
-StationController = StationController_1 = __decorate([
-    ApiTags('stations'),
-    Controller('stations'),
-    __metadata("design:paramtypes", [StationService])
+exports.StationController = StationController = StationController_1 = __decorate([
+    (0, swagger_1.ApiTags)('stations'),
+    (0, common_1.Controller)('stations'),
+    __metadata("design:paramtypes", [station_service_js_1.StationService])
 ], StationController);
-export { StationController };
 //# sourceMappingURL=station.controller.js.map

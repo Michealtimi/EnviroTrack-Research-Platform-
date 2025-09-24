@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -11,12 +12,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var OpenAQController_1;
-import { Controller, Post, Body, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { OpenAQService } from './openaq.service.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OpenAQController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const openaq_service_js_1 = require("./openaq.service.js");
 let OpenAQController = OpenAQController_1 = class OpenAQController {
     openAQService;
-    logger = new Logger(OpenAQController_1.name);
+    logger = new common_1.Logger(OpenAQController_1.name);
     constructor(openAQService) {
         this.openAQService = openAQService;
     }
@@ -33,37 +36,37 @@ let OpenAQController = OpenAQController_1 = class OpenAQController {
         return this.openAQService.fullOpenAQSync(data);
     }
 };
+exports.OpenAQController = OpenAQController;
 __decorate([
-    Post('parameters/sync'),
-    ApiOperation({ summary: 'Sync OpenAQ parameters' }),
-    ApiResponse({ status: 201, description: 'Parameters synced successfully.' }),
-    __param(0, Body()),
+    (0, common_1.Post)('parameters/sync'),
+    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ parameters' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Parameters synced successfully.' }),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], OpenAQController.prototype, "syncParameters", null);
 __decorate([
-    Post('measurements/sync'),
-    ApiOperation({ summary: 'Sync OpenAQ measurements' }),
-    ApiResponse({ status: 201, description: 'Measurements synced successfully.' }),
-    __param(0, Body()),
+    (0, common_1.Post)('measurements/sync'),
+    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ measurements' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Measurements synced successfully.' }),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], OpenAQController.prototype, "syncMeasurements", null);
 __decorate([
-    Post('full-sync'),
-    ApiOperation({ summary: 'Full sync: parameters + measurements' }),
-    ApiResponse({ status: 201, description: 'Full OpenAQ sync completed.' }),
-    __param(0, Body()),
+    (0, common_1.Post)('full-sync'),
+    (0, swagger_1.ApiOperation)({ summary: 'Full sync: parameters + measurements' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Full OpenAQ sync completed.' }),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OpenAQController.prototype, "fullSync", null);
-OpenAQController = OpenAQController_1 = __decorate([
-    ApiTags('OpenAQ'),
-    Controller('openaq'),
-    __metadata("design:paramtypes", [OpenAQService])
+exports.OpenAQController = OpenAQController = OpenAQController_1 = __decorate([
+    (0, swagger_1.ApiTags)('OpenAQ'),
+    (0, common_1.Controller)('openaq'),
+    __metadata("design:paramtypes", [openaq_service_js_1.OpenAQService])
 ], OpenAQController);
-export { OpenAQController };
 //# sourceMappingURL=openaq.controller.js.map

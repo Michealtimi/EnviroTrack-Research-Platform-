@@ -1,9 +1,9 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { StationModule } from './stations/station.module';
-import { AirQualityModule } from './air-quality/air-quality.module';
-import { OpenAQModule } from './openaq/openaq.module';
+import { StationModule } from './stations/station.module.js';
+import { AirQualityModule } from './air-quality/air-quality.module.js';
+import { OpenAQModule } from './openaq/openaq.module.js';
 
 @Module({
   imports: [

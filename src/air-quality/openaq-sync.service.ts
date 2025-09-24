@@ -1,24 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { AirQualityService } from './air-quality.service.js';
+import { OpenAQService } from '../openaq/openaq.service';
 import fetch from 'node-fetch';
 
 @Injectable()
 export class OpenAQSyncService {
   private readonly logger = new Logger(OpenAQSyncService.name);
 
-  constructor(private readonly airQualityService: AirQualityService) {}
+  constructor(private readonly openAQService: OpenAQService) {}
 
-  // Cron job runs every hour (can adjust)
   @Cron(CronExpression.EVERY_HOUR)
   async handleOpenAQSync() {
     this.logger.log('Starting OpenAQ sync via Cron job...');
 
     try {
-      // 1️⃣ Fetch parameters from OpenAQ API
       const paramResponse = await fetch('https://api.openaq.org/v2/parameters');
-      const paramData = await paramResponse.json();
-      const parameters = paramData.results.map((p: any) => ({
+      const paramData = (await paramResponse.json()) as { results: any[] };
+      const parameters = paramData.results.map((p) => ({
         id: p.id,
         name: p.name,
         displayName: p.displayName,
@@ -26,9 +24,8 @@ export class OpenAQSyncService {
         description: p.description,
       }));
 
-      // 2️⃣ Fetch latest measurements from OpenAQ API
       const measurementResponse = await fetch('https://api.openaq.org/v2/latest?limit=10000');
-      const measurementData = await measurementResponse.json();
+      const measurementData = (await measurementResponse.json()) as { results: any[] };
 
       const measurements: {
         stationId: number;
@@ -37,28 +34,24 @@ export class OpenAQSyncService {
         dateUtc: string;
       }[] = [];
 
-      // Map OpenAQ stations to your local Station table
       for (const record of measurementData.results) {
-        const station = await this.airQualityService['stationRepo'].findByNameAndCity(
+        const station = await this.openAQService.findStationByNameAndCity(
           record.location,
           record.city,
         );
-
         if (!station) continue;
 
         for (const m of record.measurements) {
           measurements.push({
             stationId: station.id,
-            parameterId: m.parameterId, // Assumes OpenAQ parameter IDs match your DB
+            parameterId: m.parameterId,
             value: m.value,
             dateUtc: m.lastUpdated,
           });
         }
       }
 
-      // 3️⃣ Perform full sync
-      await this.airQualityService.fullOpenAQSync({ parameters, measurements });
-
+      await this.openAQService.fullOpenAQSync({ parameters, measurements });
       this.logger.log('OpenAQ sync completed successfully.');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

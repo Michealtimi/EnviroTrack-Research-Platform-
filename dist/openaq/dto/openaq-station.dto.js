@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -7,8 +8,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { ApiProperty } from '@nestjs/swagger';
-export class OpenAQStationDto {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OpenAQStationDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+class OpenAQStationDto {
     id;
     name;
     city;
@@ -16,28 +19,29 @@ export class OpenAQStationDto {
     latitude;
     longitude;
 }
+exports.OpenAQStationDto = OpenAQStationDto;
 __decorate([
-    ApiProperty({ description: 'Station ID' }),
+    (0, swagger_1.ApiProperty)({ description: 'Station ID' }),
     __metadata("design:type", Number)
 ], OpenAQStationDto.prototype, "id", void 0);
 __decorate([
-    ApiProperty({ description: 'Station name' }),
+    (0, swagger_1.ApiProperty)({ description: 'Station name' }),
     __metadata("design:type", String)
 ], OpenAQStationDto.prototype, "name", void 0);
 __decorate([
-    ApiProperty({ description: 'City where station is located' }),
+    (0, swagger_1.ApiProperty)({ description: 'City where station is located' }),
     __metadata("design:type", String)
 ], OpenAQStationDto.prototype, "city", void 0);
 __decorate([
-    ApiProperty({ description: 'Country code' }),
+    (0, swagger_1.ApiProperty)({ description: 'Country code' }),
     __metadata("design:type", String)
 ], OpenAQStationDto.prototype, "country", void 0);
 __decorate([
-    ApiProperty({ description: 'Latitude' }),
+    (0, swagger_1.ApiProperty)({ description: 'Latitude' }),
     __metadata("design:type", Number)
 ], OpenAQStationDto.prototype, "latitude", void 0);
 __decorate([
-    ApiProperty({ description: 'Longitude' }),
+    (0, swagger_1.ApiProperty)({ description: 'Longitude' }),
     __metadata("design:type", Number)
 ], OpenAQStationDto.prototype, "longitude", void 0);
 //# sourceMappingURL=openaq-station.dto.js.map

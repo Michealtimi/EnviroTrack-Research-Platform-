@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,11 +9,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var StationService_1;
-import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException, Logger, } from '@nestjs/common';
-import { StationRepository } from './station.repository.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StationService = void 0;
+const common_1 = require("@nestjs/common");
+const station_repository_js_1 = require("./station.repository.js");
 let StationService = StationService_1 = class StationService {
     stationRepo;
-    logger = new Logger(StationService_1.name);
+    logger = new common_1.Logger(StationService_1.name);
     constructor(stationRepo) {
         this.stationRepo = stationRepo;
     }
@@ -22,21 +25,26 @@ let StationService = StationService_1 = class StationService {
     async createStation(data) {
         this.logger.log(`Attempting to create station: ${JSON.stringify(data)}`);
         try {
-            const existing = await this.stationRepo.findByNameAndCity(data.name, data.city);
+            const existing = await this.findByNameAndCity(data.name, data.city);
             if (existing) {
                 this.logger.warn(`Station "${data.name}" already exists in ${data.city}.`);
-                throw new BadRequestException(`Station "${data.name}" already exists in ${data.city}`);
+                throw new common_1.BadRequestException(`Station "${data.name}" already exists in ${data.city}`);
             }
-            const station = await this.stationRepo.create({ ...data, source: 'local', externalId: null });
+            const station = await this.stationRepo.create({
+                ...data,
+                source: 'local',
+                externalId: null,
+                openaqStationId: null,
+            });
             this.logger.log(`Station created successfully with ID: ${station.id}`);
             return station;
         }
         catch (error) {
-            if (error instanceof BadRequestException)
+            if (error instanceof common_1.BadRequestException)
                 throw error;
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to create station. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to create station. Please try again later.');
+            throw new common_1.InternalServerErrorException('Failed to create station. Please try again later.');
         }
     }
     // -----------------------------
@@ -52,7 +60,7 @@ let StationService = StationService_1 = class StationService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch all stations. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve stations.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve stations.');
         }
     }
     // -----------------------------
@@ -64,17 +72,17 @@ let StationService = StationService_1 = class StationService {
             const station = await this.stationRepo.findById(id);
             if (!station) {
                 this.logger.warn(`Station with ID ${id} not found.`);
-                throw new NotFoundException(`Station with ID ${id} not found`);
+                throw new common_1.NotFoundException(`Station with ID ${id} not found`);
             }
             this.logger.log(`Station found: ${station.id}`);
             return station;
         }
         catch (error) {
-            if (error instanceof NotFoundException)
+            if (error instanceof common_1.NotFoundException)
                 throw error;
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch station by ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve station.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve station.');
         }
     }
     // -----------------------------
@@ -90,7 +98,7 @@ let StationService = StationService_1 = class StationService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch stations in city ${city}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve stations by city.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve stations by city.');
         }
     }
     // -----------------------------
@@ -102,18 +110,18 @@ let StationService = StationService_1 = class StationService {
             const station = await this.stationRepo.findById(id);
             if (!station) {
                 this.logger.warn(`Update failed: Station with ID ${id} not found.`);
-                throw new NotFoundException(`Station with ID ${id} not found`);
+                throw new common_1.NotFoundException(`Station with ID ${id} not found`);
             }
             const updated = await this.stationRepo.update(id, data);
             this.logger.log(`Station updated successfully: ${updated.id}`);
             return updated;
         }
         catch (error) {
-            if (error instanceof NotFoundException)
+            if (error instanceof common_1.NotFoundException)
                 throw error;
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to update station ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to update station.');
+            throw new common_1.InternalServerErrorException('Failed to update station.');
         }
     }
     // -----------------------------
@@ -125,18 +133,18 @@ let StationService = StationService_1 = class StationService {
             const station = await this.stationRepo.findById(id);
             if (!station) {
                 this.logger.warn(`Delete failed: Station with ID ${id} not found.`);
-                throw new NotFoundException(`Station with ID ${id} not found`);
+                throw new common_1.NotFoundException(`Station with ID ${id} not found`);
             }
             await this.stationRepo.delete(id);
             this.logger.log(`Station deleted successfully: ${id}`);
             return { message: `Station ${id} deleted successfully` };
         }
         catch (error) {
-            if (error instanceof NotFoundException)
+            if (error instanceof common_1.NotFoundException)
                 throw error;
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to delete station.');
+            throw new common_1.InternalServerErrorException('Failed to delete station.');
         }
     }
     // -----------------------------
@@ -145,29 +153,42 @@ let StationService = StationService_1 = class StationService {
     async upsertFromOpenAQ(stationData) {
         this.logger.log(`Upserting OpenAQ station: ${stationData.name} (${stationData.city})`);
         try {
-            const station = await this.stationRepo.upsertFromOpenAQ(stationData); // Pass it on
+            const station = await this.stationRepo.upsertFromOpenAQ(stationData);
             this.logger.log(`Station upserted successfully: ${station.name} (${station.city})`);
             return station;
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to upsert OpenAQ station ${stationData.name}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to sync OpenAQ station.');
+            throw new common_1.InternalServerErrorException('Failed to sync OpenAQ station.');
         }
     }
     // -----------------------------
-    // ✅ NEW: Find station by OpenAQ ID
+    // ✅ NEW: Find station by External ID
     // -----------------------------
     async findByExternalId(externalId) {
         this.logger.log(`Fetching station by External ID: ${externalId}`);
         try {
-            // This is inefficient. A dedicated repository method is better.
             return await this.stationRepo.findFirst({ externalId });
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to find station by External ID ${externalId}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve station by External ID.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve station by External ID.');
+        }
+    }
+    // -----------------------------
+    // ✅ NEW: Find station by name & city (needed for OpenAQ sync)
+    // -----------------------------
+    async findByNameAndCity(name, city) {
+        this.logger.log(`Searching station by name="${name}" and city="${city}"`);
+        try {
+            return await this.stationRepo.findByNameAndCity(name, city);
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to find station by name and city. Error: ${errorMessage}`);
+            throw new common_1.InternalServerErrorException('Failed to find station.');
         }
     }
     // -----------------------------
@@ -181,13 +202,13 @@ let StationService = StationService_1 = class StationService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch unified stations. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve unified stations.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve unified stations.');
         }
     }
 };
-StationService = StationService_1 = __decorate([
-    Injectable(),
-    __metadata("design:paramtypes", [StationRepository])
+exports.StationService = StationService;
+exports.StationService = StationService = StationService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [station_repository_js_1.StationRepository])
 ], StationService);
-export { StationService };
 //# sourceMappingURL=station.service.js.map

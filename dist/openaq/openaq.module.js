@@ -1,33 +1,38 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OpenAQModule = void 0;
 // src/openaq/openaq.module.ts
-import { Module } from '@nestjs/common';
-import { StationRepository } from '../stations/station.repository';
-import { AirQualityService } from '../air-quality/air-quality.service.js';
-import { AirQualityRepository } from '../air-quality/air-quality.repository.js';
-import { OpenAQSyncService } from './openaq-sync.service.js'; // The cron service
-import { OpenAQService } from './openaq.service.js'; // The API-driven service
-import { OpenAQController } from './openaq.controller.js'; // The controller for the API
-import { StationService } from '../stations/station.service.js';
+const common_1 = require("@nestjs/common");
+const station_repository_1 = require("../stations/station.repository");
+const air_quality_service_js_1 = require("../air-quality/air-quality.service.js");
+const air_quality_repository_js_1 = require("../air-quality/air-quality.repository.js");
+const openaq_sync_service_js_1 = require("./openaq-sync.service.js");
+const openaq_service_js_1 = require("./openaq.service.js");
+const openaq_controller_js_1 = require("./openaq.controller.js");
+const station_service_js_1 = require("../stations/station.service.js");
+const prisma_service_js_1 = require("../prisma/prisma.service.js"); // <-- ADD THIS IMPORT
 let OpenAQModule = class OpenAQModule {
 };
-OpenAQModule = __decorate([
-    Module({
+exports.OpenAQModule = OpenAQModule;
+exports.OpenAQModule = OpenAQModule = __decorate([
+    (0, common_1.Module)({
         imports: [],
-        controllers: [OpenAQController],
+        controllers: [openaq_controller_js_1.OpenAQController],
         providers: [
-            OpenAQSyncService,
-            OpenAQService,
-            StationService,
-            StationRepository,
-            AirQualityService,
-            AirQualityRepository,
+            openaq_sync_service_js_1.OpenAQSyncService,
+            openaq_service_js_1.OpenAQService,
+            station_service_js_1.StationService,
+            station_repository_1.StationRepository,
+            air_quality_service_js_1.AirQualityService,
+            air_quality_repository_js_1.AirQualityRepository,
+            prisma_service_js_1.PrismaService, // <-- ADD THIS PROVIDER
         ],
     })
 ], OpenAQModule);
-export { OpenAQModule };
 //# sourceMappingURL=openaq.module.js.map

@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,8 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var AirQualityRepository_1;
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AirQualityRepository = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_js_1 = require("../prisma/prisma.service.js");
 /**
  * Repository Layer for AirQuality & OpenAQ
  * ----------------------------------------
@@ -18,7 +21,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
  */
 let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
     prisma;
-    logger = new Logger(AirQualityRepository_1.name);
+    logger = new common_1.Logger(AirQualityRepository_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -34,7 +37,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to create air quality reading. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to create air quality reading.');
+            throw new common_1.InternalServerErrorException('Failed to create air quality reading.');
         }
     }
     /** Fetch a reading by ID */
@@ -51,7 +54,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch reading by ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve reading.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve reading.');
         }
     }
     /** Fetch all readings with optional filters */
@@ -71,7 +74,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch all readings. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve all readings.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve all readings.');
         }
     }
     /** Delete a reading */
@@ -85,7 +88,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete reading with ID ${id}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to delete reading.');
+            throw new common_1.InternalServerErrorException('Failed to delete reading.');
         }
     }
     /* ----------------- ADVANCED QUERIES ----------------- */
@@ -101,7 +104,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch latest reading for station ${stationId}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve latest reading.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve latest reading.');
         }
     }
     /** Find readings in a date range */
@@ -116,7 +119,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to fetch readings for station ${stationId} in date range. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve readings in date range.');
+            throw new common_1.InternalServerErrorException('Failed to retrieve readings in date range.');
         }
     }
     /** Aggregate average by city */
@@ -134,7 +137,7 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to aggregate by city ${city}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to perform city aggregation.');
+            throw new common_1.InternalServerErrorException('Failed to perform city aggregation.');
         }
     }
     /** Aggregate average by station */
@@ -152,13 +155,13 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to aggregate by station ${stationId}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to perform station aggregation.');
+            throw new common_1.InternalServerErrorException('Failed to perform station aggregation.');
         }
     }
 };
-AirQualityRepository = AirQualityRepository_1 = __decorate([
-    Injectable(),
-    __metadata("design:paramtypes", [PrismaService])
+exports.AirQualityRepository = AirQualityRepository;
+exports.AirQualityRepository = AirQualityRepository = AirQualityRepository_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_js_1.PrismaService])
 ], AirQualityRepository);
-export { AirQualityRepository };
 //# sourceMappingURL=air-quality.repository.js.map

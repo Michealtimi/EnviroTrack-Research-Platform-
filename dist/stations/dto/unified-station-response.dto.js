@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -7,8 +8,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { ApiProperty } from '@nestjs/swagger';
-export class UnifiedStationResponseDto {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UnifiedStationResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+class UnifiedStationResponseDto {
     id;
     name;
     city;
@@ -17,32 +20,33 @@ export class UnifiedStationResponseDto {
     longitude;
     source;
 }
+exports.UnifiedStationResponseDto = UnifiedStationResponseDto;
 __decorate([
-    ApiProperty({ example: 'local-1', description: 'Unique station ID (local or OpenAQ)' }),
+    (0, swagger_1.ApiProperty)({ example: 'local-1', description: 'Unique station ID (local or OpenAQ)' }),
     __metadata("design:type", String)
 ], UnifiedStationResponseDto.prototype, "id", void 0);
 __decorate([
-    ApiProperty({ example: 'Lagos Main Station' }),
+    (0, swagger_1.ApiProperty)({ example: 'Lagos Main Station' }),
     __metadata("design:type", String)
 ], UnifiedStationResponseDto.prototype, "name", void 0);
 __decorate([
-    ApiProperty({ example: 'Lagos' }),
+    (0, swagger_1.ApiProperty)({ example: 'Lagos' }),
     __metadata("design:type", String)
 ], UnifiedStationResponseDto.prototype, "city", void 0);
 __decorate([
-    ApiProperty({ example: 'NG' }),
+    (0, swagger_1.ApiProperty)({ example: 'NG' }),
     __metadata("design:type", String)
 ], UnifiedStationResponseDto.prototype, "country", void 0);
 __decorate([
-    ApiProperty({ example: 6.5244 }),
+    (0, swagger_1.ApiProperty)({ example: 6.5244 }),
     __metadata("design:type", Number)
 ], UnifiedStationResponseDto.prototype, "latitude", void 0);
 __decorate([
-    ApiProperty({ example: 3.3792 }),
+    (0, swagger_1.ApiProperty)({ example: 3.3792 }),
     __metadata("design:type", Number)
 ], UnifiedStationResponseDto.prototype, "longitude", void 0);
 __decorate([
-    ApiProperty({ example: 'local', enum: ['local', 'openaq'] }),
+    (0, swagger_1.ApiProperty)({ example: 'local', enum: ['local', 'openaq'] }),
     __metadata("design:type", String)
 ], UnifiedStationResponseDto.prototype, "source", void 0);
 //# sourceMappingURL=unified-station-response.dto.js.map
