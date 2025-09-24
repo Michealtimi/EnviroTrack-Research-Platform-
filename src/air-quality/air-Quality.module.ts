@@ -4,7 +4,6 @@ import { AirQualityRepository } from './air-quality.repository.js';
 import { StationRepository } from '../stations/station.repository.js';
 import { AirQualityController } from './air-quality.controller.js';
 import { AirQualityService } from './air-quality.service.js';
-import { OpenAQSyncService } from './openaq-sync.service.js'; // 👈 Added for Cron sync
 
 @Module({
   controllers: [AirQualityController],
@@ -13,7 +12,6 @@ import { OpenAQSyncService } from './openaq-sync.service.js'; // 👈 Added for 
     AirQualityRepository,
     StationRepository,
     AirQualityService,
-    OpenAQSyncService, // 👈 Registers Cron service
   ],
   exports: [AirQualityService],
 })

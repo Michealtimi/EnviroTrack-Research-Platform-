@@ -17,20 +17,18 @@ let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
     stationService;
     airQualityService;
     logger = new Logger(OpenAQSyncService_1.name);
-    baseUrl = 'https://api.openaq.org/v2'; // OpenAQ API base URL
-    pageLimit = 100; // pagination limit
-    constructor(stationService, // service for Station table
-    airQualityService) {
+    baseUrl = 'https://api.openaq.org/v2';
+    pageLimit = 100;
+    constructor(stationService, airQualityService) {
         this.stationService = stationService;
         this.airQualityService = airQualityService;
     }
     /* ----------------- CRON JOB ----------------- */
-    // Runs every hour
     async syncOpenAQ() {
         this.logger.log('🔄 Starting OpenAQ sync...');
         try {
             await this.syncStations();
-            await this.syncParametersAndMeasurements();
+            await this.syncLatestMeasurements();
             this.logger.log('✅ OpenAQ sync completed successfully.');
         }
         catch (error) {
@@ -51,8 +49,8 @@ let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
             fetched = stations.length;
             for (const s of stations) {
                 try {
-                    await this.stationService.createOrUpdateFromOpenAQ({
-                        openaqStationId: s.id.toString(),
+                    await this.stationService.upsertFromOpenAQ({
+                        externalId: s.id.toString(),
                         name: s.name,
                         city: s.city ?? 'Unknown',
                         country: s.country ?? 'Unknown',
@@ -66,49 +64,38 @@ let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
                 }
             }
             page++;
-        } while (fetched === this.pageLimit); // loop until last page
+        } while (fetched === this.pageLimit);
     }
     /* ----------------- PARAMETERS + MEASUREMENTS ----------------- */
-    async syncParametersAndMeasurements() {
-        this.logger.log('📊 Syncing OpenAQ parameters and latest measurements...');
-        let page = 1;
-        let fetched = 0;
-        do {
-            const res = await axios.get(`${this.baseUrl}/measurements`, {
-                params: { limit: this.pageLimit, page },
-            });
-            const measurements = res.data?.results || [];
-            fetched = measurements.length;
-            for (const m of measurements) {
-                try {
-                    // Upsert parameter
-                    await this.airQualityService.upsertParameter({
-                        id: m.parameter_id,
-                        name: m.parameter,
-                        displayName: m.parameter,
-                        units: m.unit,
-                        description: m.parameter, // OpenAQ does not always provide description
-                    });
-                    // Map to local station
-                    const station = await this.stationService.findByOpenAQId(m.location_id.toString());
-                    if (!station)
-                        continue; // skip if station not synced yet
-                    // Create air quality reading
+    async syncLatestMeasurements() {
+        this.logger.log('📊 Syncing latest OpenAQ measurements...');
+        const syncedStations = await this.stationService.getAllStations();
+        const openaqStations = syncedStations.filter(s => s.source === 'openaq' && s.externalId);
+        this.logger.log(`Found ${openaqStations.length} OpenAQ stations to sync measurements for.`);
+        for (const station of openaqStations) {
+            try {
+                const res = await axios.get(`${this.baseUrl}/latest`, {
+                    params: { location_id: station.externalId },
+                });
+                const measurements = res.data?.results[0]?.measurements || [];
+                if (measurements.length === 0)
+                    continue;
+                this.logger.log(`Found ${measurements.length} new measurements for station: ${station.name}`);
+                for (const m of measurements) {
                     await this.airQualityService.createReading(station.id, {
-                        pm25: m.parameter === 'pm25' ? m.value : 0,
-                        pm10: m.parameter === 'pm10' ? m.value : 0,
+                        pm25: m.parameter === 'pm25' ? m.value : 0, // Assuming 0 if not present
+                        pm10: m.parameter === 'pm10' ? m.value : 0, // Assuming 0 if not present
                         co: m.parameter === 'co' ? m.value : null,
                         no2: m.parameter === 'no2' ? m.value : null,
                         o3: m.parameter === 'o3' ? m.value : null,
-                    });
-                    this.logger.log(`✅ Measurement synced for station: ${station.name}, parameter: ${m.parameter}`);
-                }
-                catch (err) {
-                    this.logger.error(`Failed to sync measurement for location ${m.location_id}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                    }, 'openaq');
                 }
             }
-            page++;
-        } while (fetched === this.pageLimit); // loop until last page
+            catch (err) {
+                this.logger.error(`Failed to sync measurements for station ${station.name} (${station.externalId}): ${err instanceof Error ? err.message : 'Unknown error'}`);
+            }
+        }
+        this.logger.log('✅ Measurements sync process completed.');
     }
 };
 __decorate([

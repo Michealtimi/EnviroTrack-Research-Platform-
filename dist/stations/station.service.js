@@ -27,7 +27,7 @@ let StationService = StationService_1 = class StationService {
                 this.logger.warn(`Station "${data.name}" already exists in ${data.city}.`);
                 throw new BadRequestException(`Station "${data.name}" already exists in ${data.city}`);
             }
-            const station = await this.stationRepo.create(data);
+            const station = await this.stationRepo.create({ ...data, source: 'local', externalId: null });
             this.logger.log(`Station created successfully with ID: ${station.id}`);
             return station;
         }
@@ -142,10 +142,10 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     // ✅ NEW: Upsert station from OpenAQ
     // -----------------------------
-    async createOrUpdateFromOpenAQ(stationData) {
+    async upsertFromOpenAQ(stationData) {
         this.logger.log(`Upserting OpenAQ station: ${stationData.name} (${stationData.city})`);
         try {
-            const station = await this.stationRepo.upsertFromOpenAQ(stationData);
+            const station = await this.stationRepo.upsertFromOpenAQ(stationData); // Pass it on
             this.logger.log(`Station upserted successfully: ${station.name} (${station.city})`);
             return station;
         }
@@ -158,16 +158,16 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     // ✅ NEW: Find station by OpenAQ ID
     // -----------------------------
-    async findByOpenAQId(openaqStationId) {
-        this.logger.log(`Fetching station by OpenAQ ID: ${openaqStationId}`);
+    async findByExternalId(externalId) {
+        this.logger.log(`Fetching station by External ID: ${externalId}`);
         try {
-            const stations = await this.stationRepo.findAll({}); // fetch all
-            return stations.find(s => s.openaqStationId === openaqStationId) || null;
+            // This is inefficient. A dedicated repository method is better.
+            return await this.stationRepo.findFirst({ externalId });
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            this.logger.error(`Failed to find station by OpenAQ ID ${openaqStationId}. Error: ${errorMessage}`);
-            throw new InternalServerErrorException('Failed to retrieve station by OpenAQ ID.');
+            this.logger.error(`Failed to find station by External ID ${externalId}. Error: ${errorMessage}`);
+            throw new InternalServerErrorException('Failed to retrieve station by External ID.');
         }
     }
     // -----------------------------

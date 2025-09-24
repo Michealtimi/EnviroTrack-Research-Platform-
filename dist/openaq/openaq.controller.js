@@ -13,24 +13,24 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var OpenAQController_1;
 import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AirQualityService } from '../air-quality/air-quality.service.js';
+import { OpenAQService } from './openaq.service.js';
 let OpenAQController = OpenAQController_1 = class OpenAQController {
-    airQualityService;
+    openAQService;
     logger = new Logger(OpenAQController_1.name);
-    constructor(airQualityService) {
-        this.airQualityService = airQualityService;
+    constructor(openAQService) {
+        this.openAQService = openAQService;
     }
     async syncParameters(params) {
         this.logger.log(`Received request to sync ${params.length} parameters.`);
-        return this.airQualityService.syncOpenAQParameters(params);
+        return this.openAQService.syncParameters(params);
     }
     async syncMeasurements(measurements) {
         this.logger.log(`Received request to sync ${measurements.length} measurements.`);
-        return this.airQualityService.syncOpenAQMeasurements(measurements);
+        return this.openAQService.syncMeasurements(measurements);
     }
     async fullSync(data) {
         this.logger.log(`Received request for full OpenAQ sync.`);
-        return this.airQualityService.fullOpenAQSync(data);
+        return this.openAQService.fullOpenAQSync(data);
     }
 };
 __decorate([
@@ -61,10 +61,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], OpenAQController.prototype, "fullSync", null);
 OpenAQController = OpenAQController_1 = __decorate([
-    ApiTags('OpenAQ') // Group in Swagger UI
-    ,
+    ApiTags('OpenAQ'),
     Controller('openaq'),
-    __metadata("design:paramtypes", [AirQualityService])
+    __metadata("design:paramtypes", [OpenAQService])
 ], OpenAQController);
 export { OpenAQController };
 //# sourceMappingURL=openaq.controller.js.map

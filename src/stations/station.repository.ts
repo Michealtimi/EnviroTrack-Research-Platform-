@@ -108,6 +108,21 @@ export class StationRepository {
     }
   }
 
+  async findFirst(where: Prisma.StationWhereInput): Promise<Station | null> {
+    this.logger.log(`Finding first station with where: ${JSON.stringify(where)}`);
+    try {
+      return this.prisma.station.findFirst({ where });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Database query failed for findFirst station. Error: ${errorMessage}`,
+      );
+      throw new InternalServerErrorException(
+        'Database error during station lookup.',
+      );
+    }
+  }
+
   async findUnified(
     filter?: { city?: string; country?: string; source?: 'local' | 'openaq' },
     pagination?: { page: number; limit: number },
@@ -153,34 +168,39 @@ export class StationRepository {
   }
 
   async upsertFromOpenAQ(stationData: {
-    openaqStationId: string;
+    externalId: string;
     name: string;
     city: string;
     country: string;
     latitude: number;
     longitude: number;
   }): Promise<Station> {
-    this.logger.log(`🔄 Upserting OpenAQ station [${stationData.openaqStationId}] (${stationData.name})`);
+    this.logger.log(`🔄 Upserting OpenAQ station [${stationData.externalId}] (${stationData.name})`);
 
-    const { openaqStationId, ...restOfData } = stationData;
+    const { externalId, ...restOfData } = stationData;
+
+    const existing = await this.prisma.station.findFirst({
+      where: { externalId },
+    });
 
     try {
-      const result = await this.prisma.station.upsert({
-        // NOTE: This requires `externalId` to have a @unique constraint in your schema.prisma file.
-        where: { externalId: openaqStationId },
-        update: restOfData,
-        create: {
-          ...restOfData,
-          externalId: openaqStationId,
-          source: 'openaq',
-        },
-      });
+      if (existing) {
+        const result = await this.prisma.station.update({
+          where: { id: existing.id },
+          data: restOfData,
+        });
+        this.logger.log(`✅ Updated station: ${result.name} (${result.city})`);
+        return result;
+      }
 
-      this.logger.log(`✅ Synced station: ${result.name} (${result.city})`);
+      const result = await this.prisma.station.create({
+        data: { ...stationData, source: 'openaq' },
+      });
+      this.logger.log(`✅ Created station: ${result.name} (${result.city})`);
       return result;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`❌ Failed to upsert OpenAQ station ${openaqStationId}. Error: ${errorMessage}`);
+      this.logger.error(`❌ Failed to upsert OpenAQ station ${externalId}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to sync OpenAQ station.');
     }
   }

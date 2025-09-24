@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AirQuality, OpenAQParameter } from '@prisma/client';
+import { AirQuality } from '@prisma/client';
 
 /**
  * Repository Layer for AirQuality & OpenAQ
@@ -144,60 +144,6 @@ export class AirQualityRepository {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to aggregate by station ${stationId}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to perform station aggregation.');
-    }
-  }
-
-  /* ----------------- OPENAQ PARAMETER MANAGEMENT ----------------- */
-
-  /** Find an OpenAQ parameter by ID */
-  async findParameterById(id: number): Promise<OpenAQParameter | null> {
-    this.logger.log(`Fetching OpenAQ parameter by ID: ${id}`);
-    try {
-      const param = await this.prisma.openAQParameter.findUnique({ where: { id } });
-      if (param) this.logger.log(`Found OpenAQ parameter: ${param.name}`);
-      else this.logger.warn(`No OpenAQ parameter found with ID: ${id}`);
-      return param;
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to fetch OpenAQ parameter ${id}. Error: ${errorMessage}`);
-      throw new InternalServerErrorException('Failed to fetch OpenAQ parameter.');
-    }
-  }
-
-  /** Create a new OpenAQ parameter */
-  async createParameter(data: {
-    id: number;
-    name: string;
-    displayName: string;
-    units: string;
-    description?: string;
-  }): Promise<OpenAQParameter> {
-    this.logger.log(`Creating OpenAQ parameter: ${data.name}`);
-    try {
-      const param = await this.prisma.openAQParameter.create({ data });
-      this.logger.log(`Successfully created OpenAQ parameter: ${param.name}`);
-      return param;
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to create OpenAQ parameter ${data.name}. Error: ${errorMessage}`);
-      throw new InternalServerErrorException('Failed to create OpenAQ parameter.');
-    }
-  }
-
-  /** Update an existing OpenAQ parameter */
-  async updateParameter(
-    id: number,
-    data: Partial<{ name: string; displayName: string; units: string; description?: string }>,
-  ): Promise<OpenAQParameter> {
-    this.logger.log(`Updating OpenAQ parameter ID: ${id}`);
-    try {
-      const param = await this.prisma.openAQParameter.update({ where: { id }, data });
-      this.logger.log(`Successfully updated OpenAQ parameter: ${param.name}`);
-      return param;
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to update OpenAQ parameter ${id}. Error: ${errorMessage}`);
-      throw new InternalServerErrorException('Failed to update OpenAQ parameter.');
     }
   }
 }
