@@ -19,6 +19,7 @@ exports.StationModule = StationModule = __decorate([
     (0, common_1.Module)({
         controllers: [station_controller_js_1.StationController],
         providers: [prisma_service_js_1.PrismaService, station_repository_js_1.StationRepository, station_service_js_1.StationService],
+        exports: [station_service_js_1.StationService],
     })
 ], StationModule);
 //# sourceMappingURL=station.module.js.map

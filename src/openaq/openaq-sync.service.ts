@@ -1,19 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import axios from 'axios';
-import { StationService } from '../stations/station.service.js';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { ConfigService } from '@nestjs/config'; // Import ConfigService
+import { StationService } from '../stations/station.service.js'; // Ensure this import is correct
 import { AirQualityService } from '../air-quality/air-quality.service.js';
 
 @Injectable()
 export class OpenAQSyncService {
   private readonly logger = new Logger(OpenAQSyncService.name);
   private readonly baseUrl = 'https://api.openaq.org/v2';
+  private readonly apiKey: string;
   private readonly pageLimit = 100;
 
   constructor(
     private readonly stationService: StationService,
     private readonly airQualityService: AirQualityService,
-  ) {}
+    private readonly configService: ConfigService, // Inject ConfigService
+    private readonly httpService: HttpService, // Inject HttpService
+  ) {
+    this.apiKey = this.configService.get<string>('OPENAQ_API_KEY') as string;
+  }
 
   /* ----------------- CRON JOB ----------------- */
   @Cron(CronExpression.EVERY_HOUR)
@@ -36,9 +43,14 @@ export class OpenAQSyncService {
     let fetched = 0;
 
     do {
-      const res = await axios.get(`${this.baseUrl}/locations`, {
-        params: { limit: this.pageLimit, page },
-      });
+      const res = await firstValueFrom(
+        this.httpService.get(`${this.baseUrl}/locations`, {
+          params: { limit: this.pageLimit, page },
+          headers: {
+            'X-API-Key': this.apiKey, // Add the API key header
+          },
+        }),
+      );
       const stations = res.data?.results || [];
       fetched = stations.length;
 
@@ -73,9 +85,14 @@ export class OpenAQSyncService {
 
     for (const station of openaqStations) {
       try {
-        const res = await axios.get(`${this.baseUrl}/latest`, {
-          params: { location_id: station.externalId },
-        });
+        const res = await firstValueFrom(
+          this.httpService.get(`${this.baseUrl}/latest`, {
+            params: { location_id: station.externalId },
+            headers: {
+              'X-API-Key': this.apiKey, // Add the API key header
+            },
+          }),
+        );
 
         const measurements = res.data?.results[0]?.measurements || [];
         if (measurements.length === 0) continue;

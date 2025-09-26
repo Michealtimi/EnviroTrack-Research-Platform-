@@ -8,26 +8,32 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 var OpenAQSyncService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OpenAQSyncService = void 0;
 const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
-const axios_1 = __importDefault(require("axios"));
-const station_service_js_1 = require("../stations/station.service.js");
+const axios_1 = require("@nestjs/axios");
+const rxjs_1 = require("rxjs");
+const config_1 = require("@nestjs/config"); // Import ConfigService
+const station_service_js_1 = require("../stations/station.service.js"); // Ensure this import is correct
 const air_quality_service_js_1 = require("../air-quality/air-quality.service.js");
 let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
     stationService;
     airQualityService;
+    configService;
+    httpService;
     logger = new common_1.Logger(OpenAQSyncService_1.name);
     baseUrl = 'https://api.openaq.org/v2';
+    apiKey;
     pageLimit = 100;
-    constructor(stationService, airQualityService) {
+    constructor(stationService, airQualityService, configService, // Inject ConfigService
+    httpService) {
         this.stationService = stationService;
         this.airQualityService = airQualityService;
+        this.configService = configService;
+        this.httpService = httpService;
+        this.apiKey = this.configService.get('OPENAQ_API_KEY');
     }
     /* ----------------- CRON JOB ----------------- */
     async syncOpenAQ() {
@@ -48,9 +54,12 @@ let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
         let page = 1;
         let fetched = 0;
         do {
-            const res = await axios_1.default.get(`${this.baseUrl}/locations`, {
+            const res = await (0, rxjs_1.firstValueFrom)(this.httpService.get(`${this.baseUrl}/locations`, {
                 params: { limit: this.pageLimit, page },
-            });
+                headers: {
+                    'X-API-Key': this.apiKey, // Add the API key header
+                },
+            }));
             const stations = res.data?.results || [];
             fetched = stations.length;
             for (const s of stations) {
@@ -80,9 +89,12 @@ let OpenAQSyncService = OpenAQSyncService_1 = class OpenAQSyncService {
         this.logger.log(`Found ${openaqStations.length} OpenAQ stations to sync measurements for.`);
         for (const station of openaqStations) {
             try {
-                const res = await axios_1.default.get(`${this.baseUrl}/latest`, {
+                const res = await (0, rxjs_1.firstValueFrom)(this.httpService.get(`${this.baseUrl}/latest`, {
                     params: { location_id: station.externalId },
-                });
+                    headers: {
+                        'X-API-Key': this.apiKey, // Add the API key header
+                    },
+                }));
                 const measurements = res.data?.results[0]?.measurements || [];
                 if (measurements.length === 0)
                     continue;
@@ -114,6 +126,8 @@ __decorate([
 exports.OpenAQSyncService = OpenAQSyncService = OpenAQSyncService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [station_service_js_1.StationService,
-        air_quality_service_js_1.AirQualityService])
+        air_quality_service_js_1.AirQualityService,
+        config_1.ConfigService,
+        axios_1.HttpService])
 ], OpenAQSyncService);
 //# sourceMappingURL=openaq-sync.service.js.map

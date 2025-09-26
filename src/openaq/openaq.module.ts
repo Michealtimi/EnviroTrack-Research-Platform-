@@ -1,25 +1,22 @@
 // src/openaq/openaq.module.ts
 import { Module } from '@nestjs/common';
-import { StationRepository } from '../stations/station.repository';
-import { AirQualityService } from '../air-quality/air-quality.service.js';
-import { AirQualityRepository } from '../air-quality/air-quality.repository.js';
+import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
+import { StationModule } from '../stations/station.module.js';
+import { AirQualityModule } from '../air-quality/air-quality.module.js';
 import { OpenAQSyncService } from './openaq-sync.service.js';
 import { OpenAQService } from './openaq.service.js';
 import { OpenAQController } from './openaq.controller.js';
-import { StationService } from '../stations/station.service.js';
-import { PrismaService } from '../prisma/prisma.service.js'; // <-- ADD THIS IMPORT
+import { PrismaService } from '../prisma/prisma.service.js';
 
 @Module({
-  imports: [],
-  controllers: [OpenAQController],
-  providers: [
-    OpenAQSyncService,
-    OpenAQService,
-    StationService,
-    StationRepository,
-    AirQualityService,
-    AirQualityRepository,
-    PrismaService, // <-- ADD THIS PROVIDER
+  imports: [
+    HttpModule,
+    ConfigModule,
+    StationModule, // <-- Import the whole module
+    AirQualityModule, // <-- Import the whole module
   ],
+  controllers: [OpenAQController],
+  providers: [OpenAQSyncService, OpenAQService, PrismaService],
 })
 export class OpenAQModule {}

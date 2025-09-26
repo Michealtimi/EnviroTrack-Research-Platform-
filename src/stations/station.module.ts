@@ -7,5 +7,6 @@ import { StationController } from './station.controller.js';
 @Module({
   controllers: [StationController],
   providers: [PrismaService, StationRepository, StationService],
+  exports: [StationService],
 })
 export class StationModule {}
