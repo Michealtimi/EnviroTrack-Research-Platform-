@@ -129,21 +129,19 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     async deleteStation(id) {
         this.logger.log(`Attempting to delete station ID: ${id}`);
+        // First, ensure the station exists.
+        // The `getStationById` method already handles the NotFoundException.
+        await this.getStationById(id);
         try {
-            const station = await this.stationRepo.findById(id);
-            if (!station) {
-                this.logger.warn(`Delete failed: Station with ID ${id} not found.`);
-                throw new common_1.NotFoundException(`Station with ID ${id} not found`);
-            }
             await this.stationRepo.delete(id);
             this.logger.log(`Station deleted successfully: ${id}`);
             return { message: `Station ${id} deleted successfully` };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException)
-                throw error;
+            // The repository now handles cascading deletes, but other DB errors could occur.
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
+            // We throw a generic error to avoid leaking database-specific details.
             throw new common_1.InternalServerErrorException('Failed to delete station.');
         }
     }

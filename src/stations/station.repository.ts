@@ -98,8 +98,14 @@ export class StationRepository {
   async delete(id: number): Promise<Station> {
     this.logger.log(`Deleting station with ID: ${id}`);
     try {
-      const result = await this.prisma.station.delete({ where: { id } });
-      this.logger.log(`Station deleted successfully: ${result.id}`);
+      // Use a transaction to ensure both deletes happen or neither do.
+      const result = await this.prisma.$transaction(async (tx) => {
+        // First, delete all related air quality readings
+        await tx.airQuality.deleteMany({ where: { stationId: id } });
+        // Then, delete the station
+        return tx.station.delete({ where: { id } });
+      });
+      this.logger.log(`Station and its readings deleted successfully: ${result.id}`);
       return result;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
