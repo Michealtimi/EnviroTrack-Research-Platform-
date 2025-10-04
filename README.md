@@ -1,191 +1,187 @@
-EnviroTrack Research Platform
+# 🌿 EnviroTrack: Unified Environmental Research Platform
 
+**EnviroTrack** is a robust, modular backend system that serves as a unified platform to collect, store, and expose critical environmental data, with a primary focus on **air quality**. It aggregates data from multiple global APIs and user-defined local monitoring stations, providing a single, comprehensive source for environmental research, policy analysis, and climate-focused applications.
 
-<div align="center"> <img src="https://user-images.githubusercontent.com/12345/your-logo-url-here.svg" alt="EnviroTrack Logo" align="center" width="200" /> </div>
-EnviroTrack is a robust, NestJS-based platform designed to collect, store, and serve environmental data, with a primary focus on air quality. It aggregates data from both user-created monitoring stations and the public OpenAQ API, providing a unified source for environmental research.
+Built on **NestJS (TypeScript)** and **PostgreSQL**, EnviroTrack simplifies the complexity of storing and combining environmental data from disparate sources by automating synchronization, transformation, and exposure via clean REST APIs.
 
-Storing and combining environmental data from disparate sources is complex. EnviroTrack simplifies this by automatically syncing with the OpenAQ global network and providing a clean API for researchers to contribute and retrieve data.
+-----
 
-✨ Features
+## ✨ Features
 
-🌱 Getting Started
+### Unified Data Ingestion (ETL)
 
-🏗️ API Usage
+  * **Unified Data Model:** Combines local station data with data synced from multiple external sources (e.g., OpenAQ) into a single, queryable API.
+  * **Automated Data Sync:** A cron job runs regularly to fetch the latest air quality measurements from thousands of global monitoring stations.
+  * **Extensible Data Sources:** Designed to support multiple external APIs, including:
+      * ✅ **OpenAQ API** (Air Quality)
+      * ✅ **NASA POWER API** (Temperature, Meteorological Data) *(Future Integration)*
+      * ✅ **World Bank Data API** (Emissions, Economic Indicators) *(Future Integration)*
+  * **Local Data Ingestion:** A dedicated REST API allows researchers to define their own "local" monitoring stations and submit air quality readings for them.
 
-🔧 How It Works
+### Architecture & API
 
-❓ FAQ
+  * **RESTful API:** A clean, well-defined set of endpoints for managing stations and retrieving unified data, documented with **Swagger/OpenAPI**.
+  * **Scalable Architecture:** Built with **NestJS**, using **Prisma** for type-safe database access and a modular structure for easy extension.
+  * **Comprehensive Testing:** The project includes unit tests for core logic, including data upserts and retrieval.
+  * **Dockerized Deployment:** Simplified deployment and portability using **Docker** and **Docker Compose**.
 
-✨ Features
-Unified Data Model: Combines local station data with data synced from OpenAQ into a single, queryable API.
+-----
 
-Automated Data Sync: A cron job runs every hour to fetch the latest air quality measurements from thousands of OpenAQ monitoring stations worldwide.
+## 🧩 Architecture Overview
 
-Local Data Ingestion: A REST API allows researchers to define their own "local" monitoring stations and submit air quality readings for them.
+The platform uses an ETL (Extract, Transform, Load) approach to manage data from external sources and provides a unified access layer.
 
-RESTful API: A clean, well-defined API for managing stations and retrieving unified data, documented with Swagger.
+```text
+[External APIs: OpenAQ / NASA / World Bank]
+           ↓
+[ETL Layer: Node.js/NestJS scripts for ingestion + transformation]
+           ↓
+[Database: PostgreSQL via Prisma ORM]
+           ↓
+[REST API: NestJS Backend]
+           ↓
+[Client/Dashboard (Optional)]
+```
 
-Scalable Architecture: Built with NestJS, using Prisma for type-safe database access and a modular structure for easy extension.
+### ⚙️ Tech Stack
 
-Extensible: Modular design makes it easy to add new data sources or features.
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Backend** | **NestJS** (TypeScript) | Scalable, modular API framework. |
+| **Database** | **PostgreSQL** (**Prisma ORM**) | Reliable relational storage and type-safe database access. |
+| **ETL** | Node.js, Cron, Axios | Scripts for data extraction and scheduling. |
+| **Deployment** | Docker, Docker Compose | Containerized environment for portability. |
+| **Documentation** | Swagger / OpenAPI | Interactive API documentation. |
 
-🌱 Getting Started
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+-----
 
-Prerequisites
-Node.js (v18 or later recommended)
+## 🌱 Getting Started
 
-Yarn (or npm)
+These instructions will get you a copy of the project up and running on your local machine for development and testing.
 
-PostgreSQL or Docker (for running a local database)
+### Prerequisites
 
-An OpenAQ API Key (it's free!)
+  * **Node.js** (v18 or later recommended)
+  * **Yarn** or **npm**
+  * **PostgreSQL** or **Docker**
+  * An **OpenAQ API Key** (required for automated sync)
 
-Installation & Setup
-Clone the repository:
+### Installation & Setup
 
-bash
-git clone https://github.com/Michealtimi/EnviroTrack-Research-Platform-.git
-cd EnviroTrack-Research-Platform-
-Install dependencies:
+1.  **Clone the repository:**
 
-bash
-npm install
-# or
-yarn install
-Set up the database:
-The easiest way to get a database is with Docker. This command will start a PostgreSQL instance in the background.
+    ```bash
+    git clone https://github.com/Michealtimi/EnviroTrack-Research-Platform-.git
+    cd EnviroTrack-Research-Platform-
+    ```
 
-bash
-docker-compose up -d
-Configure Environment Variables:
-Create a .env file in the root of the project by copying the example file:
+2.  **Install dependencies:**
 
-bash
-cp .env.example .env
-Now, open the .env file and add your credentials:
+    ```bash
+    npm install
+    # or
+    # yarn install
+    ```
 
-env
-# .env
+3.  **Set up the database (Easiest with Docker):**
 
-# ------------------
-# DATABASE
-# ------------------
-# Connection string for your PostgreSQL database
-# Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-DATABASE_URL="postgresql://user:password@localhost:5432/envirotrack?schema=public"
+    ```bash
+    docker-compose up -d
+    ```
 
-# ------------------
-# OPENAQ API
-# ------------------
-# Get your free API key from https://openaq.org/
-OPENAQ_API_KEY="your_openaq_api_key_here"
-Run Database Migrations:
-Apply the database schema using Prisma Migrate. This will create all the necessary tables.
+4.  **Configure Environment Variables:** Create a `.env` file and add your credentials:
 
-bash
-npx prisma migrate dev --name init
-Run the Application:
+    ```bash
+    cp .env.example .env
+    ```
 
-bash
-npm run start:dev
-# or
-yarn start:dev
-The application will be running on http://localhost:3000.
+    *Update `DATABASE_URL` and `OPENAQ_API_KEY` in the newly created `.env` file.*
 
-🏗️ API Usage
-The API is documented with Swagger and can be accessed at http://localhost:3000/api when the application is running. This interactive UI allows you to explore and test all available endpoints.
+5.  **Run Database Migrations:** Apply the database schema using Prisma Migrate.
 
-You can also interact with the EnviroTrack API using any HTTP client, like curl or Postman.
+    ```bash
+    npx prisma migrate dev --name init
+    ```
 
-Create a Local Station
-To add your own monitoring station (e.g., for a specific research project or a temporary sensor).
+6.  **Start the Application:**
 
-Endpoint: POST /stations
+    ```bash
+    npm run start:dev
+    # or
+    # yarn start:dev
+    ```
 
-bash
-curl -X POST http://localhost:3000/stations \
--H "Content-Type: application/json" \
--d '{
-  "name": "Campus Quad Sensor",
-  "city": "New York",
-  "country": "US",
-  "latitude": 40.7128,
-  "longitude": -74.0060
-}'
-The API will respond with the newly created station object, including its id. Save this id to add readings for it.
+    The application will be running on `http://localhost:3000`.
 
-Add an Air Quality Reading
-Add a measurement for one of your local stations.
+-----
 
-Endpoint: POST /air-quality
+## 🏗️ API Usage
 
-bash
-# Assuming your new station has id: 101
-curl -X POST http://localhost:3000/air-quality \
--H "Content-Type: application/json" \
--d '{
-  "stationId": 101,
-  "pm25": 45.2,
-  "no2": 22.7,
-  "co": 1.1
-}'
-Query for Stations (Unified)
-This is the primary endpoint for analysis. It allows you to find stations from both OpenAQ and your local database, with powerful filtering.
+The API is documented with **Swagger** at **`http://localhost:3000/api`** when the application is running.
 
-Endpoint: GET /stations/unified
+### 🧪 Core API Endpoints
 
-bash
-# Find all stations in London
-curl "http://localhost:3000/stations/unified?city=London"
+| Endpoint | Description | Example |
+| :--- | :--- | :--- |
+| **`POST /stations`** | Create a new local monitoring station. | `.../stations` |
+| **`POST /air-quality`** | Submit an air quality reading for a local station. | `.../air-quality` |
+| **`GET /stations/unified`** | **Primary endpoint for analysis.** Retrieves stations from both OpenAQ and local database, with powerful filtering (city, source, etc.). | `.../stations/unified?city=London` |
+| **`/api/temperature`** | *Future* - Get aggregated temperature data. | `.../temperature?city=Lagos` |
+| **`/api/emissions`** | *Future* - Get CO₂ emissions data. | `.../emissions?year=2024` |
 
-# Find all local stations you have created
-curl "http://localhost:3000/stations/unified?source=local"
+-----
 
-# Paginate results
-curl "http://localhost:3000/stations/unified?city=Paris&page=2&limit=50"
-The response includes a source field (openaq or local) to distinguish the origin of the station data.
+## 🔧 How It Works & Project Structure
 
-🔧 How It Works
-The platform is composed of several key services that work together:
+The platform's core logic is managed by the following services and modules:
 
-OpenAQSyncService: This service contains a cron job (@Cron) that runs every hour.
+  * **OpenAQSyncService:** Runs an **hourly cron job** to fetch, upsert stations, and save the latest air quality measurements from the OpenAQ API.
+  * **StationModule/AirQualityModule:** Manages the CRUD logic for both local and OpenAQ-sourced station and measurement data.
+  * **PrismaService:** Centralizes the database connection and client for the entire application.
 
-It calls the OpenAQ API to fetch a list of all global monitoring locations.
+### 🧰 Project Structure
 
-It uses the StationService to upsert these stations into our database, ensuring our list is always up-to-date.
+```text
+src/
+├── ingestion/       # ETL logic (e.g., OpenAQSyncService)
+├── transformation/  # Data cleaning, normalization (currently integrated into services)
+├── stations/        # Module for station management
+├── air-quality/     # Module for measurement management
+├── database/        # Prisma + PostgreSQL setup
+└── tests/           # Unit & integration tests
+```
 
-It then iterates through our known OpenAQ stations and fetches the latest measurements for each, saving them via the AirQualityService.
+-----
 
-StationModule: Manages the logic for creating, updating, and querying station information.
+## 🌍 Data Sources
 
-The StationController exposes the HTTP endpoints.
+  * **OpenAQ API** (Air Quality)
+  * **NASA POWER API** (Future)
+  * **World Bank Data API** (Future)
 
-The StationService contains the business logic.
+-----
 
-The StationRepository handles all direct database interactions via Prisma.
+## ✨ Future Work
 
-AirQualityModule: Manages the logic for recording and retrieving air quality measurements.
+  * Integrate the NASA POWER and World Bank APIs fully to expand the dataset.
+  * Add data visualization dashboard (React/Next.js).
+  * Add **ML module for pollution prediction**.
+  * Add protected API endpoint to trigger manual syncs.
 
-PrismaService: A singleton service that provides a configured Prisma Client instance to the rest of the application, centralizing the database connection.
+-----
 
-❓ FAQ
-How often does the data sync with OpenAQ?
-The sync process is scheduled to run every hour. You can change this by modifying the CronExpression in openaq-sync.service.ts.
+## 💡 Author
 
-Can I trigger a sync manually?
-Currently, the sync is only triggered by the cron schedule. A future improvement could be to add a protected API endpoint to trigger a sync on demand.
+**Micheal Agunbiade**
 
-Why are some coordinates 0, 0 or city "Unknown"?
-The syncStations function uses nullish coalescing operators (??) to provide default values if the data from the OpenAQ API is missing city, country, or coordinates. This ensures database integrity but may result in placeholder data.
+Backend & Data Engineer | Environmental Informatics Enthusiast
 
-How do I use this with import?
-This is a NestJS project. All services, controllers, and modules use standard ES6 import/export syntax. For example:
+  * 📧 michealagunbiade1@gmail.com
+  * 🌐 [github.com/Michealtimi](https://www.google.com/search?q=https://github.com/Michealtimi)
+  * 🔗 [linkedin.com/in/micheal-agunbiade](https://www.google.com/search?q=https://linkedin.com/in/micheal-agunbiade)
 
-typescript
-// src/stations/station.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { StationRepository } from './station.repository.js';
-// ...
-Where can I find the API documentation?
-When the application is running, visit http://localhost:3000/api for interactive Swagger documentation of all available endpoints.
+-----
+
+## 🧾 License
+
+This project is released under the **MIT License**. You are free to use and modify it.
