@@ -1,5 +1,7 @@
 # 🌿 EnviroTrack: Unified Environmental Research Platform
 
+**Topics:** #BackendEngineering | #DataEngineering | #EnvironmentalData | #NestJS | #OpenData | #ClimateTech
+
 **EnviroTrack** is a robust, modular backend system that serves as a unified platform to collect, store, and expose critical environmental data, with a primary focus on **air quality**. It aggregates data from multiple global APIs and user-defined local monitoring stations, providing a single, comprehensive source for environmental research, policy analysis, and climate-focused applications.
 
 Built on **NestJS (TypeScript)** and **PostgreSQL**, EnviroTrack simplifies the complexity of storing and combining environmental data from disparate sources by automating synchronization, transformation, and exposure via clean REST APIs.
