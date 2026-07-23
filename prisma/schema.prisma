@@ -34,8 +34,9 @@ model AirQuality {
   co        Float?
   no2       Float?
   o3        Float?
-  pm10      Float
-  pm25      Float
+  so2       Float?
+  pm10      Float?
+  pm25      Float?
   station   Station  @relation(fields: [stationId], references: [id])
 
   // ✅ Added: track where this reading came from

@@ -86,6 +86,7 @@ export class OpenAQService {
           co: stationMeasurements.find(m => m.parameterId === parameterNameToId['co'])?.value ?? null,
           no2: stationMeasurements.find(m => m.parameterId === parameterNameToId['no2'])?.value ?? null,
           o3: stationMeasurements.find(m => m.parameterId === parameterNameToId['o3'])?.value ?? null,
+          so2: stationMeasurements.find(m => m.parameterId === parameterNameToId['so2'])?.value ?? null,
         };
 
         // The original logic created a new reading for each parameter. This new logic

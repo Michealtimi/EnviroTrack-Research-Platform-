@@ -1,5 +1,5 @@
 // src/station/dto/create-station.dto.ts
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
@@ -20,14 +20,16 @@ export class CreateStationDto {
   @IsNotEmpty()
   country: string;
 
-  @ApiProperty({ description: 'Latitude of the station', example: 51.5074 })
+  @ApiProperty({ description: 'Latitude of the station', example: 51.5074, minimum: -90, maximum: 90 })
   @IsNumber()
-  @IsNotEmpty()
+  @Min(-90)
+  @Max(90)
   latitude: number;
 
-  @ApiProperty({ description: 'Longitude of the station', example: -0.1278 })
+  @ApiProperty({ description: 'Longitude of the station', example: -0.1278, minimum: -180, maximum: 180 })
   @IsNumber()
-  @IsNotEmpty()
+  @Min(-180)
+  @Max(180)
   longitude: number;
 }
 

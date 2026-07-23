@@ -22,21 +22,29 @@ export class AirQualityService {
   /* ----------------- DATA CREATION ----------------- */
   async createReading(
     stationId: number,
-    data: { pm25: number; pm10: number; co: number | null; no2: number | null; o3: number | null },
+    data: {
+      pm25: number | null;
+      pm10: number | null;
+      co: number | null;
+      no2: number | null;
+      o3: number | null;
+      so2: number | null;
+    },
     source: 'local' | 'openaq' = 'local',
   ) {
     try {
       const station = await this.stationRepo.findById(stationId);
       if (!station) throw new NotFoundException(`Station with ID ${stationId} not found`);
 
-      const { pm25, pm10, co, no2, o3 } = data;
+      const { pm25, pm10, co, no2, o3, so2 } = data;
       const createdReading = await this.airQualityRepo.create({
         stationId,
-        pm25,
-        pm10,
+        pm25: pm25 ?? null,
+        pm10: pm10 ?? null,
         co,
         no2,
         o3,
+        so2,
         source,
       });
 
@@ -98,7 +106,7 @@ export class AirQualityService {
   async getHazardousReadings(city: string) {
     try {
       const readings = await this.airQualityRepo.findAll({ city });
-      const hazardous = readings.filter((r: AirQuality) => r.pm25 > 25 || r.pm10 > 50);
+      const hazardous = readings.filter((r: AirQuality) => (r.pm25 ?? 0) > 25 || (r.pm10 ?? 0) > 50);
       return plainToInstance(AirQualityReadingResponseDto, hazardous, { excludeExtraneousValues: true });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';

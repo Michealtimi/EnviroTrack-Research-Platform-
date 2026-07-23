@@ -106,6 +106,7 @@ export class OpenAQSyncService {
             co: m.parameter === 'co' ? m.value : null,
             no2: m.parameter === 'no2' ? m.value : null,
             o3: m.parameter === 'o3' ? m.value : null,
+            so2: m.parameter === 'so2' ? m.value : null,
           }, 'openaq');
         }
       } catch (err: unknown) {
