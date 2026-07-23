@@ -196,15 +196,16 @@ export class StationService {
     country?: string,
     source?: 'local' | 'openaq',
     page = 1,
-    limit = 10,
+    limit = 50,
   ) {
+    const safeLimit = Math.min(limit, 100);
     this.logger.log(
-      `Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`,
+      `Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${safeLimit}]`,
     );
     try {
       return await this.stationRepo.findUnified(
         { city, country, source },
-        { page, limit },
+        { page, limit: safeLimit },
       );
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

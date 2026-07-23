@@ -11,8 +11,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { StationService } from './station.service.js';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
+import { UnifiedStationQueryDto } from './dto/unified-station-query.dto.js';
 
 @ApiTags('stations')
 @Controller('stations')
@@ -88,21 +89,14 @@ export class StationController {
   // -----------------------------
   @Get('unified')
   @ApiOperation({ summary: 'Get unified list of stations (local + OpenAQ)' })
-  @ApiQuery({ name: 'city', required: false })
-  @ApiQuery({ name: 'country', required: false })
-  @ApiQuery({ name: 'source', required: false, enum: ['local', 'openaq'] })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  async getUnifiedStations(
-    @Query('city') city?: string,
-    @Query('country') country?: string,
-    @Query('source') source?: 'local' | 'openaq',
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ) {
-    this.logger.log(
-      `Request to get unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`,
+  async getUnifiedStations(@Query() query: UnifiedStationQueryDto) {
+    this.logger.log(`Request to get unified stations ${JSON.stringify(query)}`);
+    return this.stationService.getUnifiedStations(
+      query.city,
+      query.country,
+      query.source,
+      query.page,
+      query.limit,
     );
-    return this.stationService.getUnifiedStations(city, country, source, page, limit);
   }
 }
