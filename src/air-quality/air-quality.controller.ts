@@ -56,17 +56,17 @@ export class AirQualityController {
   @Get('city/:city/average')
   @ApiOperation({ summary: 'Get average pollution by city over a recent window (default 24h)' })
   @ApiQuery({ name: 'hours', required: false, type: Number })
-  async averageByCity(@Param('city') city: string, @Query('hours') hours?: number) {
+  async averageByCity(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
     this.logger.log(`Request to get average pollution for city: ${city}`);
-    return this.airQualityService.getAveragePollutionByCity(city, hours ? Number(hours) : undefined);
+    return this.airQualityService.getAveragePollutionByCity(city, hours);
   }
 
   @Get('city/:city/hazardous')
   @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 24h guideline)' })
   @ApiQuery({ name: 'hours', required: false, type: Number })
-  async hazardous(@Param('city') city: string, @Query('hours') hours?: number) {
+  async hazardous(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
     this.logger.log(`Request to get hazardous readings for city: ${city}`);
-    return this.airQualityService.getHazardousReadings(city, hours ? Number(hours) : undefined);
+    return this.airQualityService.getHazardousReadings(city, hours);
   }
 
   @Get('station/:stationId/latest')

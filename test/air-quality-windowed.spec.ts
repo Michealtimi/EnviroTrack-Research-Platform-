@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { AirQualityService } from '../src/air-quality/air-quality.service.js';
 import { AirQualityRepository } from '../src/air-quality/air-quality.repository.js';
 import { StationRepository } from '../src/stations/station.repository.js';
@@ -40,5 +41,25 @@ describe('AirQualityService time-windowed analytics', () => {
     const service = module.get(AirQualityService);
     const result = await service.getHazardousReadings('Lagos');
     expect(result.length).toBe(1);
+  });
+});
+
+describe('ParseIntPipe on hours query param', () => {
+  it('rejects non-numeric hours value with BadRequestException', async () => {
+    const pipe = new ParseIntPipe({ optional: true });
+    await expect(
+      pipe.transform('abc', { type: 'query', data: 'hours' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('passes undefined through when hours is not provided', async () => {
+    const pipe = new ParseIntPipe({ optional: true });
+    const result = await pipe.transform(undefined as any, { type: 'query', data: 'hours' });
+    expect(result).toBeUndefined();
+  });
+
+  it('converts valid numeric string to number', async () => {
+    const pipe = new ParseIntPipe({ optional: true });
+    await expect(pipe.transform('24', { type: 'query', data: 'hours' })).resolves.toBe(24);
   });
 });
