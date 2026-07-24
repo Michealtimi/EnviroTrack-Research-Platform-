@@ -14,17 +14,15 @@ Built on **NestJS (TypeScript)** and **PostgreSQL**, EnviroTrack simplifies the 
 
   * **Unified Data Model:** Combines local station data with data synced from multiple external sources (e.g., OpenAQ) into a single, queryable API.
   * **Automated Data Sync:** A cron job runs regularly to fetch the latest air quality measurements from thousands of global monitoring stations.
-  * **Extensible Data Sources:** Designed to support multiple external APIs, including:
-      * ✅ **OpenAQ API** (Air Quality)
-      * ✅ **NASA POWER API** (Temperature, Meteorological Data) *(Future Integration)*
-      * ✅ **World Bank Data API** (Emissions, Economic Indicators) *(Future Integration)*
+  * **Data Sources:** Currently integrates **OpenAQ API** (Air Quality) via an hourly sync job. NASA POWER and World Bank Data are planned — see Future Work.
   * **Local Data Ingestion:** A dedicated REST API allows researchers to define their own "local" monitoring stations and submit air quality readings for them.
+  * **Admin-Protected Mutations:** Destructive and OpenAQ-sync-triggering routes (`DELETE /stations/:id`, `/openaq/*/sync`) require an `x-api-key` header — see "Protected routes" below. All reads and local station create/submit stay open in v1.
 
 ### Architecture & API
 
   * **RESTful API:** A clean, well-defined set of endpoints for managing stations and retrieving unified data, documented with **Swagger/OpenAPI**.
   * **Scalable Architecture:** Built with **NestJS**, using **Prisma** for type-safe database access and a modular structure for easy extension.
-  * **Comprehensive Testing:** The project includes unit tests for core logic, including data upserts and retrieval.
+  * **Automated tests:** `npm test` (Jest) covers DTO validation, pagination clamping, the admin API-key guard, and the OpenAQ v3 sync mapper.
   * **Dockerized Deployment:** Simplified deployment and portability using **Docker** and **Docker Compose**.
 
 -----
@@ -85,51 +83,47 @@ These instructions will get you a copy of the project up and running on your loc
     # yarn install
     ```
 
-3.  **Set up the database (Easiest with Docker):**
-
-    ```bash
-    docker-compose up -d
-    ```
-
-4.  **Configure Environment Variables:** Create a `.env` file and add your credentials:
+3.  **Set up the database and app with Docker:**
 
     ```bash
     cp .env.example .env
+    # edit .env: set OPENAQ_API_KEY and ADMIN_API_KEY
+    docker compose up -d --build
+    docker compose exec app npx prisma migrate deploy
     ```
 
-    *Update `DATABASE_URL` and `OPENAQ_API_KEY` in the newly created `.env` file.*
+    The application will be running on `http://localhost:3000`, Swagger docs at `http://localhost:3000/docs`.
 
-5.  **Run Database Migrations:** Apply the database schema using Prisma Migrate.
-
-    ```bash
-    npx prisma migrate dev --name init
-    ```
-
-6.  **Start the Application:**
-
-    ```bash
-    npm run start:dev
-    # or
-    # yarn start:dev
-    ```
-
-    The application will be running on `http://localhost:3000`.
+    Prefer to run without Docker? Start a local Postgres, set `DATABASE_URL` in `.env` yourself, then run `npx prisma migrate deploy` and `npm run start:dev`.
 
 -----
 
 ## 🏗️ API Usage
 
-The API is documented with **Swagger** at **`http://localhost:3000/api`** when the application is running.
+The API is documented with **Swagger** at **`http://localhost:3000/docs`** when the application is running.
 
 ### 🧪 Core API Endpoints
 
 | Endpoint | Description | Example |
 | :--- | :--- | :--- |
 | **`POST /stations`** | Create a new local monitoring station. | `.../stations` |
-| **`POST /air-quality`** | Submit an air quality reading for a local station. | `.../air-quality` |
-| **`GET /stations/unified`** | **Primary endpoint for analysis.** Retrieves stations from both OpenAQ and local database, with powerful filtering (city, source, etc.). | `.../stations/unified?city=London` |
-| **`/api/temperature`** | *Future* - Get aggregated temperature data. | `.../temperature?city=Lagos` |
-| **`/api/emissions`** | *Future* - Get CO₂ emissions data. | `.../emissions?year=2024` |
+| **`POST /air-quality/station/:stationId`** | Submit an air quality reading for a local station. | `.../air-quality/station/1` |
+| **`GET /stations/unified`** | **Primary endpoint for analysis.** Retrieves stations from both OpenAQ and local database, with powerful filtering (city, source, etc.), paginated (limit clamped to 100). | `.../stations/unified?city=London` |
+| **`GET /air-quality/city/:city/average`** | Average pollution for a city over a recent window (default 24h, `?hours=` to override). | `.../air-quality/city/Lagos/average?hours=48` |
+| **`GET /air-quality/city/:city/hazardous`** | Readings exceeding WHO 2021 guideline levels over a recent window. | `.../air-quality/city/Lagos/hazardous` |
+| **`DELETE /stations/:id`** | Delete a station (admin only). | `.../stations/1` |
+
+### 🔐 Protected routes
+
+`DELETE /stations/:id` and the `/openaq/*/sync` routes require an `x-api-key` header
+matching the `ADMIN_API_KEY` environment variable. All read routes and local station
+create/submit routes are open in v1.
+
+### ⚠️ Hazardous reading thresholds
+
+`GET /air-quality/city/:city/hazardous` flags a reading as hazardous when PM2.5 exceeds
+15 µg/m³ or PM10 exceeds 45 µg/m³ over the requested window (default 24h) — the WHO 2021
+Air Quality Guidelines' 24-hour levels for these pollutants.
 
 -----
 
