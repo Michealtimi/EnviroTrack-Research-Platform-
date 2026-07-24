@@ -46,13 +46,14 @@ export class AirQualityRepository {
   }
 
   /** Fetch all readings with optional filters */
-  async findAll(filter?: { city?: string; stationId?: number }): Promise<AirQuality[]> {
+  async findAll(filter?: { city?: string; stationId?: number; since?: Date }): Promise<AirQuality[]> {
     this.logger.log(`Fetching all readings with filter: ${JSON.stringify(filter)}`);
     try {
       const result = await this.prisma.airQuality.findMany({
         where: {
           ...(filter?.city && { station: { city: filter.city } }), // filter by related station's city
           ...(filter?.stationId && { stationId: filter.stationId }),
+          ...(filter?.since && { createdAt: { gte: filter.since } }),
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -112,11 +113,11 @@ export class AirQualityRepository {
   }
 
   /** Aggregate average by city */
-  async aggregateByCity(city: string) {
-    this.logger.log(`Aggregating air quality for city: ${city}`);
+  async aggregateByCity(city: string, since: Date) {
+    this.logger.log(`Aggregating air quality for city: ${city} since ${since.toISOString()}`);
     try {
       const result = await this.prisma.airQuality.aggregate({
-        where: { station: { city } },
+        where: { station: { city }, createdAt: { gte: since } },
         _avg: { pm25: true, pm10: true, no2: true, o3: true },
         _count: true,
       });

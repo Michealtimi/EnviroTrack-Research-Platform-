@@ -14,6 +14,10 @@ import { AirQuality } from '@prisma/client';
 export class AirQualityService {
   private readonly logger = new Logger(AirQualityService.name);
 
+  private static readonly MAX_WINDOW_HOURS = 720;
+  private static readonly WHO_24H_PM25_UGM3 = 15;
+  private static readonly WHO_24H_PM10_UGM3 = 45;
+
   constructor(
     private readonly airQualityRepo: AirQualityRepository,
     private readonly stationRepo: StationRepository,
@@ -93,9 +97,17 @@ export class AirQualityService {
   }
 
   /* ----------------- DATA ANALYSIS ----------------- */
-  async getAveragePollutionByCity(city: string) {
+  async getAveragePollutionByCity(city: string, hours = 24) {
+    const safeHours = Math.min(hours, AirQualityService.MAX_WINDOW_HOURS);
+    const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
-      return await this.airQualityRepo.aggregateByCity(city);
+      const result = await this.airQualityRepo.aggregateByCity(city, since);
+      return {
+        city,
+        windowHours: safeHours,
+        average: result._avg,
+        sampleCount: result._count,
+      };
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to calculate averages for city ${city}: ${msg}`);
@@ -103,10 +115,16 @@ export class AirQualityService {
     }
   }
 
-  async getHazardousReadings(city: string) {
+  async getHazardousReadings(city: string, hours = 24) {
+    const safeHours = Math.min(hours, AirQualityService.MAX_WINDOW_HOURS);
+    const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
-      const readings = await this.airQualityRepo.findAll({ city });
-      const hazardous = readings.filter((r: AirQuality) => (r.pm25 ?? 0) > 25 || (r.pm10 ?? 0) > 50);
+      const readings = await this.airQualityRepo.findAll({ city, since });
+      const hazardous = readings.filter(
+        (r: AirQuality) =>
+          (r.pm25 !== null && r.pm25 > AirQualityService.WHO_24H_PM25_UGM3) ||
+          (r.pm10 !== null && r.pm10 > AirQualityService.WHO_24H_PM10_UGM3),
+      );
       return plainToInstance(AirQualityReadingResponseDto, hazardous, { excludeExtraneousValues: true });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';

@@ -5,10 +5,11 @@ import {
   Post,
   Param,
   Body,
+  Query,
   ParseIntPipe,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { AirQualityService } from './air-quality.service.js';
 
@@ -53,17 +54,19 @@ export class AirQualityController {
   }
 
   @Get('city/:city/average')
-  @ApiOperation({ summary: 'Get average pollution by city' })
-  async averageByCity(@Param('city') city: string) {
+  @ApiOperation({ summary: 'Get average pollution by city over a recent window (default 24h)' })
+  @ApiQuery({ name: 'hours', required: false, type: Number })
+  async averageByCity(@Param('city') city: string, @Query('hours') hours?: number) {
     this.logger.log(`Request to get average pollution for city: ${city}`);
-    return this.airQualityService.getAveragePollutionByCity(city);
+    return this.airQualityService.getAveragePollutionByCity(city, hours ? Number(hours) : undefined);
   }
 
   @Get('city/:city/hazardous')
-  @ApiOperation({ summary: 'Get hazardous readings by city' })
-  async hazardous(@Param('city') city: string) {
+  @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 24h guideline)' })
+  @ApiQuery({ name: 'hours', required: false, type: Number })
+  async hazardous(@Param('city') city: string, @Query('hours') hours?: number) {
     this.logger.log(`Request to get hazardous readings for city: ${city}`);
-    return this.airQualityService.getHazardousReadings(city);
+    return this.airQualityService.getHazardousReadings(city, hours ? Number(hours) : undefined);
   }
 
   @Get('station/:stationId/latest')
