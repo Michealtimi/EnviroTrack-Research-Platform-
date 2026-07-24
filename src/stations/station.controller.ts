@@ -9,11 +9,13 @@ import {
   ParseIntPipe,
   Query,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { StationService } from './station.service.js';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
 import { UnifiedStationQueryDto } from './dto/unified-station-query.dto.js';
+import { ApiKeyGuard } from '../common/guards/api-key.guard.js';
 
 @ApiTags('stations')
 @Controller('stations')
@@ -78,7 +80,9 @@ export class StationController {
   // ✅ Delete station
   // -----------------------------
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a station' })
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
+  @ApiOperation({ summary: 'Delete a station (requires admin API key)' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Request to delete station with ID: ${id}`);
     return this.stationService.deleteStation(id);
