@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma, Station } from '@prisma/client';
 import { UnifiedStationResponseDto } from './dto/unified-station-response.dto.js';
@@ -16,6 +16,9 @@ export class StationRepository {
       this.logger.log(`Successfully created station with ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException(`A station named "${data.name}" already exists in "${data.city}".`);
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to create station. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to create station in the database.');

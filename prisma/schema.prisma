@@ -25,6 +25,8 @@ model Station {
 
   // ✅ Added: external ID (used when syncing with OpenAQ)
   externalId  String?      @unique
+
+  @@unique([name, city])
 }
 
 model AirQuality {
