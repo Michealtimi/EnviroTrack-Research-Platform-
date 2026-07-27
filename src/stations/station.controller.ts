@@ -46,16 +46,6 @@ export class StationController {
   }
 
   // -----------------------------
-  // ✅ Get station by ID
-  // -----------------------------
-  @Get(':id')
-  @ApiOperation({ summary: 'Get station by ID' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`Request to get station by ID: ${id}`);
-    return this.stationService.getStationById(id);
-  }
-
-  // -----------------------------
   // ✅ Get stations by city
   // -----------------------------
   @Get('city/:city')
@@ -63,6 +53,32 @@ export class StationController {
   async findByCity(@Param('city') city: string) {
     this.logger.log(`Request to get stations by city: ${city}`);
     return this.stationService.getStationsByCity(city);
+  }
+
+  // -----------------------------
+  // ✅ NEW: Unified stations endpoint
+  // -----------------------------
+  @Get('unified')
+  @ApiOperation({ summary: 'Get unified list of stations (local + OpenAQ)' })
+  async getUnifiedStations(@Query() query: UnifiedStationQueryDto) {
+    this.logger.log(`Request to get unified stations ${JSON.stringify(query)}`);
+    return this.stationService.getUnifiedStations(
+      query.city,
+      query.country,
+      query.source,
+      query.page,
+      query.limit,
+    );
+  }
+
+  // -----------------------------
+  // ✅ Get station by ID
+  // -----------------------------
+  @Get(':id')
+  @ApiOperation({ summary: 'Get station by ID' })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`Request to get station by ID: ${id}`);
+    return this.stationService.getStationById(id);
   }
 
   // -----------------------------
@@ -86,21 +102,5 @@ export class StationController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Request to delete station with ID: ${id}`);
     return this.stationService.deleteStation(id);
-  }
-
-  // -----------------------------
-  // ✅ NEW: Unified stations endpoint
-  // -----------------------------
-  @Get('unified')
-  @ApiOperation({ summary: 'Get unified list of stations (local + OpenAQ)' })
-  async getUnifiedStations(@Query() query: UnifiedStationQueryDto) {
-    this.logger.log(`Request to get unified stations ${JSON.stringify(query)}`);
-    return this.stationService.getUnifiedStations(
-      query.city,
-      query.country,
-      query.source,
-      query.page,
-      query.limit,
-    );
   }
 }
