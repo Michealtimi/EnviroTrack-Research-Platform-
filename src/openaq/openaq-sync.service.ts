@@ -121,11 +121,19 @@ export class OpenAQSyncService {
         const reading: Record<string, number | null> = {
           pm25: null, pm10: null, co: null, no2: null, o3: null, so2: null,
         };
+        let matched = false;
         for (const r of results) {
           const paramName = sensorParameterMap.get(r.sensorsId);
           if (paramName && paramName in reading) {
             reading[paramName] = r.value;
+            matched = true;
           }
+        }
+        if (!matched) {
+          this.logger.warn(
+            `No known pollutant matched for station ${station.name} (${station.externalId}) - ${results.length} sensor reading(s) returned but none mapped to a tracked parameter. Skipping empty reading.`,
+          );
+          continue;
         }
         await this.airQualityService.createReading(
           station.id,
