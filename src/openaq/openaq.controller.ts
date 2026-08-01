@@ -1,20 +1,21 @@
-import { Controller, Post, Body, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Logger, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../common/guards/api-key.guard.js';
 import { OpenAQService } from './openaq.service.js';
 import { OpenAQParameterDto } from './dto/openaq-parameter.dto.js';
 import { OpenAQMeasurementDto } from './dto/openaq-measurement.dto.js';
+import { SyncHistoryQueryDto } from './dto/sync-history-query.dto.js';
 
 @ApiTags('OpenAQ')
 @Controller('openaq')
-@UseGuards(ApiKeyGuard)
-@ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
 export class OpenAQController {
   private readonly logger = new Logger(OpenAQController.name);
 
   constructor(private readonly openAQService: OpenAQService) {}
 
   @Post('parameters/sync')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
   @ApiOperation({ summary: 'Sync OpenAQ parameters (requires admin API key)' })
   @ApiResponse({ status: 201, description: 'Parameters synced successfully.' })
   async syncParameters(@Body() params: OpenAQParameterDto[]) {
@@ -23,6 +24,8 @@ export class OpenAQController {
   }
 
   @Post('measurements/sync')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
   @ApiOperation({ summary: 'Sync OpenAQ measurements (requires admin API key)' })
   @ApiResponse({ status: 201, description: 'Measurements synced successfully.' })
   async syncMeasurements(@Body() measurements: OpenAQMeasurementDto[]) {
@@ -31,6 +34,8 @@ export class OpenAQController {
   }
 
   @Post('full-sync')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
   @ApiOperation({ summary: 'Full sync: parameters + measurements (requires admin API key)' })
   @ApiResponse({ status: 201, description: 'Full OpenAQ sync completed.' })
   async fullSync(
@@ -38,5 +43,12 @@ export class OpenAQController {
   ) {
     this.logger.log(`Received request for full OpenAQ sync.`);
     return this.openAQService.fullOpenAQSync(data);
+  }
+
+  @Get('sync-history')
+  @ApiOperation({ summary: 'Get recent OpenAQ sync run history (public, read-only)' })
+  async syncHistory(@Query() query: SyncHistoryQueryDto) {
+    this.logger.log(`Request for OpenAQ sync history [limit=${query.limit}]`);
+    return this.openAQService.getSyncHistory(query.limit);
   }
 }

@@ -113,4 +113,19 @@ export class OpenAQService {
     this.logger.log(`✅ Full OpenAQ sync (processing incoming data) completed`);
     return { success: true };
   }
+
+  async getSyncHistory(limit: number) {
+    const safeLimit = Math.min(limit, 100);
+    this.logger.log(`Fetching OpenAQ sync history [limit=${safeLimit}]`);
+    try {
+      return await this.prisma.openAQSyncLog.findMany({
+        take: safeLimit,
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to fetch sync history: ${msg}`);
+      throw error;
+    }
+  }
 }

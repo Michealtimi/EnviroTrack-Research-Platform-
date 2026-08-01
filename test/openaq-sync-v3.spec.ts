@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { of } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../src/prisma/prisma.service.js';
 import { OpenAQSyncService } from '../src/openaq/openaq-sync.service.js';
 import { StationService } from '../src/stations/station.service.js';
 import { AirQualityService } from '../src/air-quality/air-quality.service.js';
@@ -34,6 +35,7 @@ describe('OpenAQSyncService v3', () => {
           useValue: { get: (key: string) => (key === 'OPENAQ_SYNC_MAX_LOCATIONS' ? '10' : undefined) },
         },
         { provide: HttpService, useValue: { get: httpGet } },
+        { provide: PrismaService, useValue: { openAQSyncLog: { create: jest.fn() } } },
       ],
     }).compile();
 
@@ -67,6 +69,7 @@ describe('OpenAQSyncService v3', () => {
         { provide: AirQualityService, useValue: { createReading } },
         { provide: ConfigService, useValue: { get: () => undefined } },
         { provide: HttpService, useValue: { get: httpGet } },
+        { provide: PrismaService, useValue: { openAQSyncLog: { create: jest.fn() } } },
       ],
     }).compile();
 
@@ -97,6 +100,7 @@ describe('OpenAQSyncService v3', () => {
         { provide: AirQualityService, useValue: { createReading } },
         { provide: ConfigService, useValue: { get: () => undefined } },
         { provide: HttpService, useValue: { get: httpGet } },
+        { provide: PrismaService, useValue: { openAQSyncLog: { create: jest.fn() } } },
       ],
     }).compile();
 

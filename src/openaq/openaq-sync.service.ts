@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { StationService } from '../stations/station.service.js';
 import { AirQualityService } from '../air-quality/air-quality.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '@prisma/client';
 
 interface OpenAQLocation {
   id: number;
@@ -34,10 +36,20 @@ export class OpenAQSyncService {
     private readonly airQualityService: AirQualityService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
   ) {
     this.apiKey = this.configService.get<string>('OPENAQ_API_KEY') ?? '';
     this.maxLocations = Number(this.configService.get<string>('OPENAQ_SYNC_MAX_LOCATIONS')) || 50;
     this.countryIso = this.configService.get<string>('OPENAQ_SYNC_COUNTRY_ISO') || undefined;
+  }
+
+  private async writeSyncLog(resource: 'stations' | 'measurements', status: 'success' | 'failed', details: Record<string, unknown>) {
+    try {
+      await this.prisma.openAQSyncLog.create({ data: { resource, status, details: details as Prisma.InputJsonValue } });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to write OpenAQSyncLog entry for ${resource}: ${msg}`);
+    }
   }
 
   @Cron(CronExpression.EVERY_HOUR)
@@ -56,95 +68,118 @@ export class OpenAQSyncService {
   // ponytail: v1 caps sync to `maxLocations` (optionally one country) to stay inside the
   // free-tier rate limit. Raise/drop the cap once on a paid key or full coverage is needed.
   private async syncStations(): Promise<Map<number, string>> {
+    const start = Date.now();
     this.logger.log('📡 Syncing OpenAQ locations (v3)...');
     const sensorParameterMap = new Map<number, string>();
     let page = 1;
     let synced = 0;
+    let failed = 0;
 
-    while (synced < this.maxLocations) {
-      const res = await firstValueFrom(
-        this.httpService.get<{ results: OpenAQLocation[] }>(`${this.baseUrl}/locations`, {
-          params: {
-            limit: Math.min(this.pageLimit, this.maxLocations - synced),
-            page,
-            ...(this.countryIso && { iso: this.countryIso }),
-          },
-          headers: { 'X-API-Key': this.apiKey },
-        }),
-      );
-      const locations = res.data?.results ?? [];
-      if (locations.length === 0) break;
+    try {
+      while (synced < this.maxLocations) {
+        const res = await firstValueFrom(
+          this.httpService.get<{ results: OpenAQLocation[] }>(`${this.baseUrl}/locations`, {
+            params: {
+              limit: Math.min(this.pageLimit, this.maxLocations - synced),
+              page,
+              ...(this.countryIso && { iso: this.countryIso }),
+            },
+            headers: { 'X-API-Key': this.apiKey },
+          }),
+        );
+        const locations = res.data?.results ?? [];
+        if (locations.length === 0) break;
 
-      for (const loc of locations) {
-        if (synced >= this.maxLocations) break;
-        try {
-          await this.stationService.upsertFromOpenAQ({
-            externalId: loc.id.toString(),
-            name: loc.name,
-            city: loc.locality ?? loc.country?.name ?? 'Unknown',
-            country: loc.country?.name ?? loc.country?.code ?? 'Unknown',
-            latitude: loc.coordinates?.latitude ?? 0,
-            longitude: loc.coordinates?.longitude ?? 0,
-          });
-          for (const sensor of loc.sensors ?? []) {
-            if (sensor.parameter?.name) sensorParameterMap.set(sensor.id, sensor.parameter.name);
+        for (const loc of locations) {
+          if (synced >= this.maxLocations) break;
+          try {
+            await this.stationService.upsertFromOpenAQ({
+              externalId: loc.id.toString(),
+              name: loc.name,
+              city: loc.locality ?? loc.country?.name ?? 'Unknown',
+              country: loc.country?.name ?? loc.country?.code ?? 'Unknown',
+              latitude: loc.coordinates?.latitude ?? 0,
+              longitude: loc.coordinates?.longitude ?? 0,
+            });
+            for (const sensor of loc.sensors ?? []) {
+              if (sensor.parameter?.name) sensorParameterMap.set(sensor.id, sensor.parameter.name);
+            }
+            synced++;
+          } catch (err: unknown) {
+            failed++;
+            this.logger.error(`Failed to sync location ${loc.name}: ${err instanceof Error ? err.message : 'Unknown error'}`);
           }
-          synced++;
-        } catch (err: unknown) {
-          this.logger.error(`Failed to sync location ${loc.name}: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
+
+        page++;
       }
 
-      page++;
+      this.logger.log(`✅ Synced ${synced} OpenAQ locations.`);
+      await this.writeSyncLog('stations', 'success', { synced, failed, durationMs: Date.now() - start });
+      return sensorParameterMap;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      await this.writeSyncLog('stations', 'failed', { synced, failed, durationMs: Date.now() - start, error: msg });
+      throw error;
     }
-
-    this.logger.log(`✅ Synced ${synced} OpenAQ locations.`);
-    return sensorParameterMap;
   }
 
   private async syncLatestMeasurements(sensorParameterMap: Map<number, string>) {
+    const start = Date.now();
     this.logger.log('📊 Syncing latest OpenAQ measurements (v3)...');
-    const syncedStations = await this.stationService.getAllStations();
-    const openaqStations = syncedStations.filter((s) => s.source === 'openaq' && s.externalId);
+    let synced = 0;
+    let failed = 0;
 
-    for (const station of openaqStations) {
-      try {
-        const res = await firstValueFrom(
-          this.httpService.get<{ results: OpenAQLatestResult[] }>(
-            `${this.baseUrl}/locations/${station.externalId}/latest`,
-            { headers: { 'X-API-Key': this.apiKey } },
-          ),
-        );
-        const results = res.data?.results ?? [];
-        if (results.length === 0) continue;
+    try {
+      const syncedStations = await this.stationService.getAllStations();
+      const openaqStations = syncedStations.filter((s) => s.source === 'openaq' && s.externalId);
 
-        const reading: Record<string, number | null> = {
-          pm25: null, pm10: null, co: null, no2: null, o3: null, so2: null,
-        };
-        let matched = false;
-        for (const r of results) {
-          const paramName = sensorParameterMap.get(r.sensorsId);
-          if (paramName && paramName in reading) {
-            reading[paramName] = r.value;
-            matched = true;
-          }
-        }
-        if (!matched) {
-          this.logger.warn(
-            `No known pollutant matched for station ${station.name} (${station.externalId}) - ${results.length} sensor reading(s) returned but none mapped to a tracked parameter. Skipping empty reading.`,
+      for (const station of openaqStations) {
+        try {
+          const res = await firstValueFrom(
+            this.httpService.get<{ results: OpenAQLatestResult[] }>(
+              `${this.baseUrl}/locations/${station.externalId}/latest`,
+              { headers: { 'X-API-Key': this.apiKey } },
+            ),
           );
-          continue;
-        }
-        await this.airQualityService.createReading(
-          station.id,
-          reading as { pm25: number | null; pm10: number | null; co: number | null; no2: number | null; o3: number | null; so2: number | null },
-          'openaq',
-        );
-      } catch (err: unknown) {
-        this.logger.error(`Failed to sync measurements for station ${station.name} (${station.externalId}): ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
-    }
+          const results = res.data?.results ?? [];
+          if (results.length === 0) continue;
 
-    this.logger.log('✅ Measurements sync process completed.');
+          const reading: Record<string, number | null> = {
+            pm25: null, pm10: null, co: null, no2: null, o3: null, so2: null,
+          };
+          let matched = false;
+          for (const r of results) {
+            const paramName = sensorParameterMap.get(r.sensorsId);
+            if (paramName && paramName in reading) {
+              reading[paramName] = r.value;
+              matched = true;
+            }
+          }
+          if (!matched) {
+            this.logger.warn(
+              `No known pollutant matched for station ${station.name} (${station.externalId}) - ${results.length} sensor reading(s) returned but none mapped to a tracked parameter. Skipping empty reading.`,
+            );
+            continue;
+          }
+          await this.airQualityService.createReading(
+            station.id,
+            reading as { pm25: number | null; pm10: number | null; co: number | null; no2: number | null; o3: number | null; so2: number | null },
+            'openaq',
+          );
+          synced++;
+        } catch (err: unknown) {
+          failed++;
+          this.logger.error(`Failed to sync measurements for station ${station.name} (${station.externalId}): ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+      }
+
+      this.logger.log('✅ Measurements sync process completed.');
+      await this.writeSyncLog('measurements', 'success', { synced, failed, durationMs: Date.now() - start });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      await this.writeSyncLog('measurements', 'failed', { synced, failed, durationMs: Date.now() - start, error: msg });
+      throw error;
+    }
   }
 }

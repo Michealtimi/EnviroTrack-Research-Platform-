@@ -133,6 +133,13 @@ check doesn't yet account for `deletedAt`.
 15 µg/m³ or PM10 exceeds 45 µg/m³ over the requested window (default 24h) — the WHO 2021
 Air Quality Guidelines' 24-hour levels for these pollutants.
 
+### 🩺 Sync health
+
+`GET /openaq/sync-history?limit=` (public, clamped to 100) returns the most recent OpenAQ
+sync log entries — one per phase (`stations`/`measurements`) per hourly run, each with a
+`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`). This is
+how you tell whether the cron is silently failing instead of finding out from stale data.
+
 -----
 
 ## 🔧 How It Works & Project Structure
