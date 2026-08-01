@@ -7,12 +7,16 @@ import {
 } from '@nestjs/common';
 import { StationRepository } from './station.repository.js';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
+import { AuditLogService } from '../common/audit/audit-log.service.js';
 
 @Injectable()
 export class StationService {
   private readonly logger = new Logger(StationService.name);
 
-  constructor(private readonly stationRepo: StationRepository) {}
+  constructor(
+    private readonly stationRepo: StationRepository,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   // -----------------------------
   // ✅ Create a new local station
@@ -97,7 +101,7 @@ export class StationService {
   // -----------------------------
   // ✅ Update station
   // -----------------------------
-  async updateStation(id: number, data: UpdateStationDto) {
+  async updateStation(id: number, data: UpdateStationDto, userId: string) {
     this.logger.log(`Updating station ID: ${id}`);
     try {
       const station = await this.stationRepo.findById(id);
@@ -106,6 +110,13 @@ export class StationService {
         throw new NotFoundException(`Station with ID ${id} not found`);
       }
       const updated = await this.stationRepo.update(id, data);
+      await this.auditLog.log({
+        userId,
+        action: 'update',
+        resource: 'Station',
+        resourceId: String(id),
+        changes: { ...data },
+      });
       this.logger.log(`Station updated successfully: ${updated.id}`);
       return updated;
     } catch (error: unknown) {
@@ -119,7 +130,7 @@ export class StationService {
   // -----------------------------
   // ✅ Delete station
   // -----------------------------
-  async deleteStation(id: number) {
+  async deleteStation(id: number, userId: string) {
     this.logger.log(`Attempting to delete station ID: ${id}`);
     // First, ensure the station exists. This reuses the logic
     // from getStationById, which already throws a NotFoundException.
@@ -127,6 +138,13 @@ export class StationService {
 
     try {
       await this.stationRepo.delete(id);
+      await this.auditLog.log({
+        userId,
+        action: 'soft_delete',
+        resource: 'Station',
+        resourceId: String(id),
+        changes: { deletedAt: new Date().toISOString() },
+      });
       this.logger.log(`Station deleted successfully: ${id}`);
       return { message: `Station ${id} deleted successfully` };
     } catch (error: unknown) {

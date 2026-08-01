@@ -4,6 +4,7 @@ import { AirQualityRepository } from './air-quality.repository.js';
 import { StationRepository } from '../stations/station.repository.js';
 import { AirQualityController } from './air-quality.controller.js';
 import { AirQualityService } from './air-quality.service.js';
+import { AuditLogService } from '../common/audit/audit-log.service.js';
 
 @Module({
   controllers: [AirQualityController],
@@ -12,6 +13,7 @@ import { AirQualityService } from './air-quality.service.js';
     AirQualityRepository,
     StationRepository,
     AirQualityService,
+    AuditLogService,
   ],
   exports: [AirQualityService],
 })

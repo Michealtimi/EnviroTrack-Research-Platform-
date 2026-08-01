@@ -3,6 +3,7 @@ import { BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { AirQualityService } from '../src/air-quality/air-quality.service.js';
 import { AirQualityRepository } from '../src/air-quality/air-quality.repository.js';
 import { StationRepository } from '../src/stations/station.repository.js';
+import { AuditLogService } from '../src/common/audit/audit-log.service.js';
 
 describe('AirQualityService time-windowed analytics', () => {
   it('passes a 24h-ago cutoff by default to the repository', async () => {
@@ -12,6 +13,7 @@ describe('AirQualityService time-windowed analytics', () => {
         AirQualityService,
         { provide: AirQualityRepository, useValue: { aggregateByCity } },
         { provide: StationRepository, useValue: {} },
+        { provide: AuditLogService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 
@@ -35,6 +37,7 @@ describe('AirQualityService time-windowed analytics', () => {
         AirQualityService,
         { provide: AirQualityRepository, useValue: { findAll } },
         { provide: StationRepository, useValue: {} },
+        { provide: AuditLogService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

@@ -7,18 +7,25 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  Req,
   Logger,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { AirQualityService } from './air-quality.service.js';
+import { isAdminRequest } from '../common/guards/api-key.guard.js';
 
 @ApiTags('air-quality')
 @Controller('air-quality')
 export class AirQualityController {
   private readonly logger = new Logger(AirQualityController.name);
 
-  constructor(private readonly airQualityService: AirQualityService) {}
+  constructor(
+    private readonly airQualityService: AirQualityService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('station/:stationId')
   @ApiOperation({ summary: 'Create a new air quality reading for a station' })
@@ -26,6 +33,7 @@ export class AirQualityController {
   async create(
     @Param('stationId', ParseIntPipe) stationId: number,
     @Body() body: CreateAirQualityDto,
+    @Req() req: Request,
   ) {
     this.logger.log(`Request to create reading for station ID: ${stationId}`);
     const readingData = {
@@ -36,7 +44,8 @@ export class AirQualityController {
       o3: body.o3 ?? null,
       so2: body.so2 ?? null,
     };
-    return this.airQualityService.createReading(stationId, readingData);
+    const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
+    return this.airQualityService.createReading(stationId, readingData, 'local', userId);
   }
 
   @Get('station/:stationId')

@@ -9,6 +9,7 @@ import { AirQualityReadingResponseDto } from './dto/air-quality-response.dto.js'
 import { StationRepository } from '../stations/station.repository.js';
 import { AirQualityRepository } from './air-quality.repository.js';
 import { AirQuality } from '@prisma/client';
+import { AuditLogService } from '../common/audit/audit-log.service.js';
 
 @Injectable()
 export class AirQualityService {
@@ -21,6 +22,7 @@ export class AirQualityService {
   constructor(
     private readonly airQualityRepo: AirQualityRepository,
     private readonly stationRepo: StationRepository,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   /* ----------------- DATA CREATION ----------------- */
@@ -35,6 +37,7 @@ export class AirQualityService {
       so2: number | null;
     },
     source: 'local' | 'openaq' = 'local',
+    userId?: string,
   ) {
     try {
       const station = await this.stationRepo.findById(stationId);
@@ -51,6 +54,16 @@ export class AirQualityService {
         so2,
         source,
       });
+
+      if (source === 'local') {
+        await this.auditLog.log({
+          userId: userId ?? 'public',
+          action: 'create',
+          resource: 'AirQuality',
+          resourceId: createdReading.id,
+          changes: data,
+        });
+      }
 
       return plainToInstance(AirQualityReadingResponseDto, createdReading, { excludeExtraneousValues: true });
     } catch (error: unknown) {
