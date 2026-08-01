@@ -15,6 +15,7 @@ model Station {
   latitude    Float
   longitude   Float
   createdAt   DateTime     @default(now())
+  deletedAt   DateTime?
   readings    AirQuality[]
 
   // optional link to OpenAQ station if synced

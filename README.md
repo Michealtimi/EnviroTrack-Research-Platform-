@@ -119,6 +119,14 @@ The API is documented with **Swagger** at **`http://localhost:3000/docs`** when 
 matching the `ADMIN_API_KEY` environment variable. All read routes and local station
 create/submit routes are open in v1.
 
+### 🗑️ Deletion is non-destructive
+
+`DELETE /stations/:id` soft-deletes (sets `deletedAt`) rather than removing the row —
+research data is never hard-deleted by this API. A soft-deleted station 404s on every
+read route. Known limitation: creating a new station with the same name+city as a
+previously deleted one will still fail as "already exists," since the uniqueness
+check doesn't yet account for `deletedAt`.
+
 ### ⚠️ Hazardous reading thresholds
 
 `GET /air-quality/city/:city/hazardous` flags a reading as hazardous when PM2.5 exceeds

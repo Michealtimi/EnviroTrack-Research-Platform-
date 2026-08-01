@@ -9,7 +9,7 @@ export class StationRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Omit<Station, 'id' | 'createdAt'>): Promise<Station> {
+  async create(data: Omit<Station, 'id' | 'createdAt' | 'deletedAt'>): Promise<Station> {
     this.logger.log(`Creating new station with name: ${data.name}`);
     try {
       const result = await this.prisma.station.create({ data });
@@ -30,6 +30,7 @@ export class StationRepository {
     try {
       const result = await this.prisma.station.findMany({
         where: {
+          deletedAt: null,
           ...(filter?.city && { city: filter.city }),
           ...(filter?.country && { country: filter.country }),
         },
@@ -47,7 +48,7 @@ export class StationRepository {
   async findById(id: number): Promise<Station | null> {
     this.logger.log(`Fetching station by ID: ${id}`);
     try {
-      const result = await this.prisma.station.findUnique({ where: { id } });
+      const result = await this.prisma.station.findUnique({ where: { id, deletedAt: null } });
       if (result) {
         this.logger.log(`Found station with ID: ${id}`);
       } else {
@@ -64,7 +65,7 @@ export class StationRepository {
   async findByCity(city: string): Promise<Station[]> {
     this.logger.log(`Fetching stations in city: ${city}`);
     try {
-      const result = await this.prisma.station.findMany({ where: { city } });
+      const result = await this.prisma.station.findMany({ where: { city, deletedAt: null } });
       this.logger.log(`Found ${result.length} stations in ${city}.`);
       return result;
     } catch (error: unknown) {
@@ -99,20 +100,17 @@ export class StationRepository {
   }
 
   async delete(id: number): Promise<Station> {
-    this.logger.log(`Deleting station with ID: ${id}`);
+    this.logger.log(`Soft-deleting station with ID: ${id}`);
     try {
-      // Use a transaction to ensure both deletes happen or neither do.
-      const result = await this.prisma.$transaction(async (tx) => {
-        // First, delete all related air quality readings
-        await tx.airQuality.deleteMany({ where: { stationId: id } });
-        // Then, delete the station
-        return tx.station.delete({ where: { id } });
+      const result = await this.prisma.station.update({
+        where: { id },
+        data: { deletedAt: new Date() },
       });
-      this.logger.log(`Station and its readings deleted successfully: ${result.id}`);
+      this.logger.log(`Station soft-deleted successfully: ${result.id}`);
       return result;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
+      this.logger.error(`Failed to soft-delete station ID ${id}. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to delete station from the database.');
     }
   }
@@ -142,6 +140,7 @@ export class StationRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.StationWhereInput = {
+      deletedAt: null,
       ...(city && { city: { contains: city, mode: 'insensitive' } }),
       ...(country && { country }),
       ...(source && { source }),
