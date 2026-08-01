@@ -16,8 +16,14 @@ export class AirQualityService {
   private readonly logger = new Logger(AirQualityService.name);
 
   private static readonly MAX_WINDOW_HOURS = 720;
-  private static readonly WHO_24H_PM25_UGM3 = 15;
-  private static readonly WHO_24H_PM10_UGM3 = 45;
+  private static readonly WHO_LIMITS_UGM3: Record<string, number> = {
+    pm25: 15,
+    pm10: 45,
+    no2: 25,
+    so2: 40,
+    o3: 100,
+    co: 4000,
+  };
 
   constructor(
     private readonly airQualityRepo: AirQualityRepository,
@@ -133,12 +139,21 @@ export class AirQualityService {
     const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
       const readings = await this.airQualityRepo.findAll({ city, since });
-      const hazardous = readings.filter(
-        (r: AirQuality) =>
-          (r.pm25 !== null && r.pm25 > AirQualityService.WHO_24H_PM25_UGM3) ||
-          (r.pm10 !== null && r.pm10 > AirQualityService.WHO_24H_PM10_UGM3),
-      );
-      return plainToInstance(AirQualityReadingResponseDto, hazardous, { excludeExtraneousValues: true });
+      const withExceedances = readings.map((r: AirQuality) => {
+        const exceedances: { pollutant: string; value: number; limit: number; factor: number }[] = [];
+        for (const [pollutant, limit] of Object.entries(AirQualityService.WHO_LIMITS_UGM3)) {
+          const value = (r as unknown as Record<string, number | null>)[pollutant];
+          if (value !== null && value !== undefined && value > limit) {
+            exceedances.push({ pollutant, value, limit, factor: Math.round((value / limit) * 10) / 10 });
+          }
+        }
+        return { reading: r, exceedances };
+      });
+      const hazardous = withExceedances.filter((x) => x.exceedances.length > 0);
+      return hazardous.map((x) => ({
+        ...plainToInstance(AirQualityReadingResponseDto, x.reading, { excludeExtraneousValues: true }),
+        exceedances: x.exceedances,
+      }));
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to fetch hazardous readings for city ${city}: ${msg}`);

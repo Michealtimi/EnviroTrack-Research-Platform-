@@ -127,11 +127,14 @@ read route. Known limitation: creating a new station with the same name+city as 
 previously deleted one will still fail as "already exists," since the uniqueness
 check doesn't yet account for `deletedAt`.
 
-### ⚠️ Hazardous reading thresholds
+### ⚠️ Hazardous reading thresholds & exceedance factors
 
-`GET /air-quality/city/:city/hazardous` flags a reading as hazardous when PM2.5 exceeds
-15 µg/m³ or PM10 exceeds 45 µg/m³ over the requested window (default 24h) — the WHO 2021
-Air Quality Guidelines' 24-hour levels for these pollutants.
+`GET /air-quality/city/:city/hazardous` flags a reading as hazardous when any of its six
+pollutants exceeds its WHO 2021 Air Quality Guideline value over the requested window
+(default 24h): PM2.5 > 15 µg/m³, PM10 > 45 µg/m³, NO2 > 25 µg/m³, SO2 > 40 µg/m³,
+O3 > 100 µg/m³, CO > 4000 µg/m³. Each hazardous reading's response includes an
+`exceedances` array — e.g. `{"pollutant": "no2", "value": 325, "limit": 25, "factor": 13}` —
+so a policy analyst can read "NO2 at this station is 13x the WHO limit" directly off the API.
 
 ### 🩺 Sync health
 

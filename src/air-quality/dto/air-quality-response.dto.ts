@@ -20,19 +20,19 @@ export class AirQualityReadingResponseDto {
   @Expose()
   pm10: number | null;
 
-  @ApiProperty({ description: 'Carbon monoxide ppm', example: 1.2, nullable: true })
+  @ApiProperty({ description: 'Carbon monoxide µg/m³', example: 1200, nullable: true })
   @Expose()
   co: number | null;
 
-  @ApiProperty({ description: 'Nitrogen dioxide ppm', example: 0.8, nullable: true })
+  @ApiProperty({ description: 'Nitrogen dioxide µg/m³', example: 18, nullable: true })
   @Expose()
   no2: number | null;
 
-  @ApiProperty({ description: 'Ozone ppm', example: 0.05, nullable: true })
+  @ApiProperty({ description: 'Ozone µg/m³', example: 40, nullable: true })
   @Expose()
   o3: number | null;
 
-  @ApiProperty({ description: 'Sulfur dioxide ppm', example: 0.02, nullable: true })
+  @ApiProperty({ description: 'Sulfur dioxide µg/m³', example: 12, nullable: true })
   @Expose()
   so2: number | null;
 

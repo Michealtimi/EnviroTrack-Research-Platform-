@@ -17,28 +17,28 @@ export class CreateAirQualityDto {
   @Max(2000)
   pm10?: number;
 
-  @ApiProperty({ description: 'Carbon monoxide ppm', example: 1.2, required: false })
+  @ApiProperty({ description: 'Carbon monoxide µg/m³', example: 1200, required: false })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(500)
   co?: number;
 
-  @ApiProperty({ description: 'Nitrogen dioxide ppm', example: 0.8, required: false })
+  @ApiProperty({ description: 'Nitrogen dioxide µg/m³', example: 18, required: false })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(500)
   no2?: number;
 
-  @ApiProperty({ description: 'Ozone ppm', example: 0.05, required: false })
+  @ApiProperty({ description: 'Ozone µg/m³', example: 40, required: false })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(500)
   o3?: number;
 
-  @ApiProperty({ description: 'Sulfur dioxide ppm', example: 0.02, required: false })
+  @ApiProperty({ description: 'Sulfur dioxide µg/m³', example: 12, required: false })
   @IsOptional()
   @IsNumber()
   @Min(0)
