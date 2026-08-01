@@ -123,9 +123,11 @@ create/submit routes are open in v1.
 
 `DELETE /stations/:id` soft-deletes (sets `deletedAt`) rather than removing the row —
 research data is never hard-deleted by this API. A soft-deleted station 404s on every
-read route. Known limitation: creating a new station with the same name+city as a
-previously deleted one will still fail as "already exists," since the uniqueness
-check doesn't yet account for `deletedAt`.
+`/stations` read route (direct lookup, list, city, unified); its historical readings
+remain queryable through `/air-quality` by design — deleting a station never deletes
+its measurement history. Known limitation: creating a new station with the same
+name+city as a previously deleted one will still fail as "already exists," since the
+uniqueness check doesn't yet account for `deletedAt`.
 
 ### ⚠️ Hazardous reading thresholds & exceedance factors
 
@@ -140,7 +142,8 @@ so a policy analyst can read "NO2 at this station is 13x the WHO limit" directly
 
 `GET /openaq/sync-history?limit=` (public, clamped to 100) returns the most recent OpenAQ
 sync log entries — one per phase (`stations`/`measurements`) per hourly run, each with a
-`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`). This is
+`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`, plus an
+`error` message on failed rows). This is
 how you tell whether the cron is silently failing instead of finding out from stale data.
 
 -----
