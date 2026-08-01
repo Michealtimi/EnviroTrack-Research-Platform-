@@ -47,6 +47,37 @@ describe('AirQualityService time-windowed analytics', () => {
   });
 });
 
+describe('AirQualityService.createReading audit-log scope', () => {
+  const buildService = async () => {
+    const findById = jest.fn().mockResolvedValue({ id: 1 });
+    const create = jest.fn().mockResolvedValue({ id: 'r1', stationId: 1 });
+    const log = jest.fn();
+    const module = await Test.createTestingModule({
+      providers: [
+        AirQualityService,
+        { provide: AirQualityRepository, useValue: { create } },
+        { provide: StationRepository, useValue: { findById } },
+        { provide: AuditLogService, useValue: { log } },
+      ],
+    }).compile();
+    return { service: module.get(AirQualityService), log };
+  };
+
+  const reading = { pm25: 10, pm10: null, co: null, no2: null, o3: null, so2: null };
+
+  it('writes an audit log entry for a local reading', async () => {
+    const { service, log } = await buildService();
+    await service.createReading(1, reading, 'local', 'public');
+    expect(log).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write an audit log entry for an openaq-synced reading', async () => {
+    const { service, log } = await buildService();
+    await service.createReading(1, reading, 'openaq');
+    expect(log).not.toHaveBeenCalled();
+  });
+});
+
 describe('ParseIntPipe on hours query param', () => {
   it('rejects non-numeric hours value with BadRequestException', async () => {
     const pipe = new ParseIntPipe({ optional: true });
