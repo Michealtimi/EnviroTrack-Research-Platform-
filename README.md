@@ -142,9 +142,10 @@ so a policy analyst can read "NO2 at this station is 13x the WHO limit" directly
 
 `GET /openaq/sync-history?limit=` (public, clamped to 100) returns the most recent OpenAQ
 sync log entries — one per phase (`stations`/`measurements`) per hourly run, each with a
-`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`, plus an
-`error` message on failed rows). This is
+`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`). This is
 how you tell whether the cron is silently failing instead of finding out from stale data.
+The raw error message on a failed row is stored but not exposed on this public endpoint —
+it's stripped before the response is sent, since this route requires no admin key.
 
 -----
 

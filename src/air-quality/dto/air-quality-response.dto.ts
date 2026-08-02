@@ -40,3 +40,22 @@ export class AirQualityReadingResponseDto {
   @Expose()
   createdAt: Date;
 }
+
+export class ExceedanceDto {
+  @ApiProperty({ description: 'Pollutant that exceeded its WHO 2021 guideline value', example: 'no2' })
+  pollutant: string;
+
+  @ApiProperty({ description: 'Measured value, µg/m³', example: 325 })
+  value: number;
+
+  @ApiProperty({ description: 'WHO 2021 guideline limit, µg/m³', example: 25 })
+  limit: number;
+
+  @ApiProperty({ description: 'Multiple of the WHO limit (value / limit, rounded to 1 decimal)', example: 13 })
+  factor: number;
+}
+
+export class HazardousReadingResponseDto extends AirQualityReadingResponseDto {
+  @ApiProperty({ description: 'Pollutants that exceeded their WHO 2021 guideline value, with the exceedance factor', type: [ExceedanceDto] })
+  exceedances: ExceedanceDto[];
+}

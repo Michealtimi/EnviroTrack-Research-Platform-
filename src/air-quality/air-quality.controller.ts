@@ -12,8 +12,9 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
+import { HazardousReadingResponseDto } from './dto/air-quality-response.dto.js';
 import { AirQualityService } from './air-quality.service.js';
 import { isAdminRequest } from '../common/guards/api-key.guard.js';
 
@@ -71,8 +72,9 @@ export class AirQualityController {
   }
 
   @Get('city/:city/hazardous')
-  @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 24h guideline)' })
+  @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 guideline values)' })
   @ApiQuery({ name: 'hours', required: false, type: Number })
+  @ApiResponse({ status: 200, type: [HazardousReadingResponseDto] })
   async hazardous(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
     this.logger.log(`Request to get hazardous readings for city: ${city}`);
     return this.airQualityService.getHazardousReadings(city, hours);

@@ -80,4 +80,26 @@ describe('OpenAQ sync history', () => {
       orderBy: { createdAt: 'desc' },
     });
   });
+
+  it('strips the raw error message from failed rows before returning them publicly', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      { id: '1', resource: 'stations', status: 'failed', details: { synced: 0, failed: 1, durationMs: 5, error: 'connect ECONNREFUSED 10.0.0.1:5432' }, createdAt: new Date() },
+      { id: '2', resource: 'measurements', status: 'success', details: { synced: 3, failed: 0, durationMs: 10 }, createdAt: new Date() },
+    ]);
+    const module = await Test.createTestingModule({
+      providers: [
+        OpenAQService,
+        { provide: StationService, useValue: {} },
+        { provide: AirQualityService, useValue: {} },
+        { provide: PrismaService, useValue: { openAQSyncLog: { findMany } } },
+      ],
+    }).compile();
+
+    const service = module.get(OpenAQService);
+    const result = await service.getSyncHistory(50);
+
+    expect(result[0].details).toEqual({ synced: 0, failed: 1, durationMs: 5 });
+    expect(result[0].details).not.toHaveProperty('error');
+    expect(result[1].details).toEqual({ synced: 3, failed: 0, durationMs: 10 });
+  });
 });

@@ -118,9 +118,18 @@ export class OpenAQService {
     const safeLimit = Math.min(limit, 100);
     this.logger.log(`Fetching OpenAQ sync history [limit=${safeLimit}]`);
     try {
-      return await this.prisma.openAQSyncLog.findMany({
+      const rows = await this.prisma.openAQSyncLog.findMany({
         take: safeLimit,
         orderBy: { createdAt: 'desc' },
+      });
+      // This route is intentionally public (operational visibility, not an admin action) -
+      // strip the raw infra error message before it leaves the server. The full row,
+      // error included, still lives in the DB for anyone with direct access to inspect.
+      return rows.map((row) => {
+        const details = row.details as Record<string, unknown> | null;
+        if (!details || !('error' in details)) return row;
+        const { error: _error, ...safeDetails } = details;
+        return { ...row, details: safeDetails };
       });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
