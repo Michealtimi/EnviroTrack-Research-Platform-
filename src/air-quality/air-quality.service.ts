@@ -41,6 +41,12 @@ export class AirQualityService {
       no2: number | null;
       o3: number | null;
       so2: number | null;
+      instrumentModel?: string | null;
+      calibrationDate?: Date | null;
+      samplingDurationMinutes?: number | null;
+      weatherConditions?: string | null;
+      temperature?: number | null;
+      humidity?: number | null;
     },
     source: 'local' | 'openaq' = 'local',
     userId?: string,
@@ -59,6 +65,14 @@ export class AirQualityService {
         o3,
         so2,
         source,
+        instrumentModel: data.instrumentModel ?? null,
+        calibrationDate: data.calibrationDate ?? null,
+        samplingDurationMinutes: data.samplingDurationMinutes ?? null,
+        weatherConditions: data.weatherConditions ?? null,
+        temperature: data.temperature ?? null,
+        humidity: data.humidity ?? null,
+        isSuspect: false,
+        suspectReason: null,
       });
 
       if (source === 'local') {

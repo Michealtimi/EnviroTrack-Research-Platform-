@@ -44,6 +44,12 @@ export class AirQualityController {
       no2: body.no2 ?? null,
       o3: body.o3 ?? null,
       so2: body.so2 ?? null,
+      instrumentModel: body.instrumentModel ?? null,
+      calibrationDate: body.calibrationDate ? new Date(body.calibrationDate) : null,
+      samplingDurationMinutes: body.samplingDurationMinutes ?? null,
+      weatherConditions: body.weatherConditions ?? null,
+      temperature: body.temperature ?? null,
+      humidity: body.humidity ?? null,
     };
     const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
     return this.airQualityService.createReading(stationId, readingData, 'local', userId);
