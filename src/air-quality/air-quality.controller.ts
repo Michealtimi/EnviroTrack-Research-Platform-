@@ -3,20 +3,23 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Param,
   Body,
   Query,
   ParseIntPipe,
   Req,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { HazardousReadingResponseDto } from './dto/air-quality-response.dto.js';
+import { SetSuspectDto } from './dto/set-suspect.dto.js';
 import { AirQualityService } from './air-quality.service.js';
-import { isAdminRequest } from '../common/guards/api-key.guard.js';
+import { isAdminRequest, ApiKeyGuard } from '../common/guards/api-key.guard.js';
 
 @ApiTags('air-quality')
 @Controller('air-quality')
@@ -53,6 +56,17 @@ export class AirQualityController {
     };
     const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
     return this.airQualityService.createReading(stationId, readingData, 'local', userId);
+  }
+
+  @Patch(':id/suspect')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
+  @ApiOperation({ summary: 'Flag or unflag a reading as suspect (requires admin API key)' })
+  @ApiBody({ type: SetSuspectDto })
+  async setSuspect(@Param('id') id: string, @Body() body: SetSuspectDto) {
+    this.logger.log(`Request to set suspect flag on reading ${id}: ${body.isSuspect}`);
+    // ApiKeyGuard already rejected this request if the key didn't match - always "admin" here.
+    return this.airQualityService.setSuspectFlag(id, body.isSuspect, body.suspectReason ?? null, 'admin');
   }
 
   @Get('station/:stationId')

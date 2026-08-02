@@ -94,6 +94,28 @@ export class AirQualityService {
     }
   }
 
+  async setSuspectFlag(id: string, isSuspect: boolean, suspectReason: string | null, userId: string) {
+    try {
+      const existing = await this.airQualityRepo.findById(id);
+      if (!existing) throw new NotFoundException(`Reading with ID ${id} not found`);
+
+      const updated = await this.airQualityRepo.update(id, { isSuspect, suspectReason });
+      await this.auditLog.log({
+        userId,
+        action: 'flag_suspect',
+        resource: 'AirQuality',
+        resourceId: id,
+        changes: { isSuspect, suspectReason },
+      });
+      return plainToInstance(AirQualityReadingResponseDto, updated, { excludeExtraneousValues: true });
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) throw error;
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to set suspect flag for reading ${id}: ${msg}`);
+      throw new InternalServerErrorException('Failed to update suspect flag.');
+    }
+  }
+
   /* ----------------- DATA RETRIEVAL ----------------- */
   async getReadingsByStation(stationId: number) {
     try {
