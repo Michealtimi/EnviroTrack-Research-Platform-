@@ -100,6 +100,13 @@ export class AirQualityController {
     return this.airQualityService.getHazardousReadings(city, hours);
   }
 
+  @Get('city/:city/duplicates')
+  @ApiOperation({ summary: 'Find candidate duplicate readings for a city (same station, identical pollutant values, within 60s)' })
+  async duplicates(@Param('city') city: string) {
+    this.logger.log(`Request to find duplicate readings for city: ${city}`);
+    return this.airQualityService.findDuplicates(city);
+  }
+
   @Get('station/:stationId/latest')
   @ApiOperation({ summary: 'Get latest reading by station ID' })
   async latestByStation(@Param('stationId', ParseIntPipe) stationId: number) {

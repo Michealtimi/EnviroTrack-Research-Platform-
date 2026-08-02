@@ -196,4 +196,42 @@ export class AirQualityService {
       throw new InternalServerErrorException('Failed to fetch hazardous readings.');
     }
   }
+
+  private static readonly DUPLICATE_WINDOW_MS = 60_000;
+
+  async findDuplicates(city: string) {
+    try {
+      const readings = await this.airQualityRepo.findAll({ city });
+      const groups = new Map<string, AirQuality[]>();
+
+      for (const r of readings) {
+        const key = `${r.stationId}|${r.pm25}|${r.pm10}|${r.co}|${r.no2}|${r.o3}|${r.so2}`;
+        const group = groups.get(key) ?? [];
+        group.push(r);
+        groups.set(key, group);
+      }
+
+      const duplicates: { stationId: number; pollutants: Record<string, number | null>; readingIds: string[]; count: number }[] = [];
+      for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        const times = group.map((r) => r.createdAt.getTime());
+        const span = Math.max(...times) - Math.min(...times);
+        if (span > AirQualityService.DUPLICATE_WINDOW_MS) continue;
+
+        const [first] = group;
+        duplicates.push({
+          stationId: first.stationId,
+          pollutants: { pm25: first.pm25, pm10: first.pm10, co: first.co, no2: first.no2, o3: first.o3, so2: first.so2 },
+          readingIds: group.map((r) => r.id),
+          count: group.length,
+        });
+      }
+
+      return duplicates;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to find duplicates for city ${city}: ${msg}`);
+      throw new InternalServerErrorException('Failed to find duplicate readings.');
+    }
+  }
 }
