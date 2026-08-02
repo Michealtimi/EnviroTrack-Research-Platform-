@@ -8,14 +8,17 @@ import {
 import { StationRepository } from './station.repository.js';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
 import { AuditLogService } from '../common/audit/audit-log.service.js';
+import { AirQualityRepository } from '../air-quality/air-quality.repository.js';
 
 @Injectable()
 export class StationService {
   private readonly logger = new Logger(StationService.name);
+  private static readonly MAX_COMPLETENESS_WINDOW_HOURS = 720; // mirrors AirQualityService.MAX_WINDOW_HOURS
 
   constructor(
     private readonly stationRepo: StationRepository,
     private readonly auditLog: AuditLogService,
+    private readonly airQualityRepo: AirQualityRepository,
   ) {}
 
   // -----------------------------
@@ -229,6 +232,38 @@ export class StationService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to fetch unified stations. Error: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to retrieve unified stations.');
+    }
+  }
+
+  // -----------------------------
+  // ✅ NEW: Reporting completeness for OpenAQ-synced stations
+  // -----------------------------
+  async getCompleteness(id: number, hours = 24) {
+    const safeHours = Math.min(hours, StationService.MAX_COMPLETENESS_WINDOW_HOURS);
+    const station = await this.getStationById(id); // throws NotFoundException if missing
+
+    if (station.source !== 'openaq') {
+      return { applicable: false as const, stationId: id };
+    }
+
+    const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
+    try {
+      const readings = await this.airQualityRepo.findAll({ stationId: id, since });
+      const hourBuckets = new Set(readings.map((r) => Math.floor(r.createdAt.getTime() / (60 * 60 * 1000))));
+      const hoursWithReadings = hourBuckets.size;
+      const completenessPercent = Math.round((hoursWithReadings / safeHours) * 1000) / 10;
+
+      return {
+        applicable: true as const,
+        stationId: id,
+        windowHours: safeHours,
+        hoursWithReadings,
+        completenessPercent,
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to compute completeness for station ${id}. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to compute station completeness.');
     }
   }
 }

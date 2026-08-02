@@ -147,6 +147,29 @@ how you tell whether the cron is silently failing instead of finding out from st
 The raw error message on a failed row is stored but not exposed on this public endpoint —
 it's stripped before the response is sent, since this route requires no admin key.
 
+### 🧪 Reading metadata
+
+`POST /air-quality/station/:stationId` now accepts optional `instrumentModel`,
+`calibrationDate`, `samplingDurationMinutes`, `weatherConditions`, `temperature`, and
+`humidity` fields alongside the pollutant values — all returned back on every reading.
+
+### 🚩 Suspect flag
+
+`PATCH /air-quality/:id/suspect` (admin key required) marks a reading `{ isSuspect, suspectReason }`
+without deleting it — research data is never destroyed, only annotated.
+
+### 🔁 Duplicate detection
+
+`GET /air-quality/city/:city/duplicates` (public) surfaces candidate duplicate readings —
+same station, identical pollutant values, submitted within 60 seconds of each other — for a
+human to review. Nothing is auto-flagged or auto-deleted.
+
+### 📊 Completeness
+
+`GET /stations/:id/completeness?hours=` (public, default 24h) reports what fraction of
+expected hours an OpenAQ-synced station actually reported in. Local stations return
+`{ applicable: false }` — there's no fixed cadence to measure a field visit against.
+
 -----
 
 ## 🔧 How It Works & Project Structure
