@@ -160,9 +160,9 @@ without deleting it — research data is never destroyed, only annotated.
 
 ### 🔁 Duplicate detection
 
-`GET /air-quality/city/:city/duplicates` (public) surfaces candidate duplicate readings —
-same station, identical pollutant values, submitted within 60 seconds of each other — for a
-human to review. Nothing is auto-flagged or auto-deleted.
+`GET /air-quality/city/:city/duplicates?hours=` (public, default 24h) surfaces candidate
+duplicate readings — same station, identical pollutant values, submitted within 60 seconds
+of each other — for a human to review. Nothing is auto-flagged or auto-deleted.
 
 ### 📊 Completeness
 
