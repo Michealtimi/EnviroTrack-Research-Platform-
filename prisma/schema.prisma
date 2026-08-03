@@ -44,6 +44,16 @@ model AirQuality {
 
   // ✅ Added: track where this reading came from
   source    String   @default("local") // "local" | "openaq"
+
+  instrumentModel         String?
+  calibrationDate         DateTime?
+  samplingDurationMinutes Int?
+  weatherConditions       String?
+  temperature             Float?
+  humidity                Float?
+
+  isSuspect     Boolean @default(false)
+  suspectReason String?
 }
 
 model AuditLog {

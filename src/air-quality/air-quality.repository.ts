@@ -80,6 +80,20 @@ export class AirQualityRepository {
     }
   }
 
+  /** Update a reading (used for the suspect-flag endpoint) */
+  async update(id: string, data: Partial<AirQuality>): Promise<AirQuality> {
+    this.logger.log(`Updating reading with ID: ${id}`);
+    try {
+      const result = await this.prisma.airQuality.update({ where: { id }, data });
+      this.logger.log(`Successfully updated reading with ID: ${id}`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to update reading with ID ${id}. Error: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to update reading.');
+    }
+  }
+
   /* ----------------- ADVANCED QUERIES ----------------- */
 
   /** Latest reading for a station */

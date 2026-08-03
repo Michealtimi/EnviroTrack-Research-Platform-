@@ -15,7 +15,7 @@ import {
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { StationService } from './station.service.js';
-import { ApiTags, ApiOperation, ApiBody, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiHeader, ApiQuery } from '@nestjs/swagger';
 import { CreateStationDto, UpdateStationDto } from './dto/create-station.dto.js';
 import { UnifiedStationQueryDto } from './dto/unified-station-query.dto.js';
 import { ApiKeyGuard, isAdminRequest } from '../common/guards/api-key.guard.js';
@@ -75,6 +75,17 @@ export class StationController {
       query.page,
       query.limit,
     );
+  }
+
+  // -----------------------------
+  // ✅ NEW: Reporting completeness for OpenAQ-synced stations
+  // -----------------------------
+  @Get(':id/completeness')
+  @ApiOperation({ summary: 'Get reporting completeness for an OpenAQ-synced station over a recent window (default 24h)' })
+  @ApiQuery({ name: 'hours', required: false, type: Number })
+  async completeness(@Param('id', ParseIntPipe) id: number, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
+    this.logger.log(`Request for completeness on station ${id}`);
+    return this.stationService.getCompleteness(id, hours);
   }
 
   // -----------------------------

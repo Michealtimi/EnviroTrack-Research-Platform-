@@ -36,6 +36,38 @@ export class AirQualityReadingResponseDto {
   @Expose()
   so2: number | null;
 
+  @ApiProperty({ description: 'Instrument model used to take this reading', example: 'Aeroqual Series 500', nullable: true })
+  @Expose()
+  instrumentModel: string | null;
+
+  @ApiProperty({ description: 'Date the instrument was last calibrated', example: '2026-06-01T00:00:00.000Z', nullable: true })
+  @Expose()
+  calibrationDate: Date | null;
+
+  @ApiProperty({ description: 'Sampling duration, minutes', example: 15, nullable: true })
+  @Expose()
+  samplingDurationMinutes: number | null;
+
+  @ApiProperty({ description: 'Weather conditions at the time of the reading', example: 'Sunny, light wind, 28°C', nullable: true })
+  @Expose()
+  weatherConditions: string | null;
+
+  @ApiProperty({ description: 'Ambient temperature, °C', example: 28.4, nullable: true })
+  @Expose()
+  temperature: number | null;
+
+  @ApiProperty({ description: 'Relative humidity, %', example: 61, nullable: true })
+  @Expose()
+  humidity: number | null;
+
+  @ApiProperty({ description: 'Whether a steward has flagged this reading as suspect', example: false })
+  @Expose()
+  isSuspect: boolean;
+
+  @ApiProperty({ description: 'Steward-provided reason the reading is flagged suspect', example: null, nullable: true })
+  @Expose()
+  suspectReason: string | null;
+
   @ApiProperty({ description: 'Timestamp of the reading', example: '2025-09-20T14:00:00.000Z' })
   @Expose()
   createdAt: Date;

@@ -3,20 +3,23 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Param,
   Body,
   Query,
   ParseIntPipe,
   Req,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { HazardousReadingResponseDto } from './dto/air-quality-response.dto.js';
+import { SetSuspectDto } from './dto/set-suspect.dto.js';
 import { AirQualityService } from './air-quality.service.js';
-import { isAdminRequest } from '../common/guards/api-key.guard.js';
+import { isAdminRequest, ApiKeyGuard } from '../common/guards/api-key.guard.js';
 
 @ApiTags('air-quality')
 @Controller('air-quality')
@@ -44,9 +47,26 @@ export class AirQualityController {
       no2: body.no2 ?? null,
       o3: body.o3 ?? null,
       so2: body.so2 ?? null,
+      instrumentModel: body.instrumentModel ?? null,
+      calibrationDate: body.calibrationDate ? new Date(body.calibrationDate) : null,
+      samplingDurationMinutes: body.samplingDurationMinutes ?? null,
+      weatherConditions: body.weatherConditions ?? null,
+      temperature: body.temperature ?? null,
+      humidity: body.humidity ?? null,
     };
     const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
     return this.airQualityService.createReading(stationId, readingData, 'local', userId);
+  }
+
+  @Patch(':id/suspect')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
+  @ApiOperation({ summary: 'Flag or unflag a reading as suspect (requires admin API key)' })
+  @ApiBody({ type: SetSuspectDto })
+  async setSuspect(@Param('id') id: string, @Body() body: SetSuspectDto) {
+    this.logger.log(`Request to set suspect flag on reading ${id}: ${body.isSuspect}`);
+    // ApiKeyGuard already rejected this request if the key didn't match - always "admin" here.
+    return this.airQualityService.setSuspectFlag(id, body.isSuspect, body.suspectReason ?? null, 'admin');
   }
 
   @Get('station/:stationId')
@@ -78,6 +98,14 @@ export class AirQualityController {
   async hazardous(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
     this.logger.log(`Request to get hazardous readings for city: ${city}`);
     return this.airQualityService.getHazardousReadings(city, hours);
+  }
+
+  @Get('city/:city/duplicates')
+  @ApiOperation({ summary: 'Find candidate duplicate readings for a city over a recent window (default 24h, same station, identical pollutant values, within 60s)' })
+  @ApiQuery({ name: 'hours', required: false, type: Number })
+  async duplicates(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
+    this.logger.log(`Request to find duplicate readings for city: ${city}`);
+    return this.airQualityService.findDuplicates(city, hours);
   }
 
   @Get('station/:stationId/latest')

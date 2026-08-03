@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { StationService } from '../src/stations/station.service.js';
 import { StationRepository } from '../src/stations/station.repository.js';
 import { AuditLogService } from '../src/common/audit/audit-log.service.js';
+import { AirQualityRepository } from '../src/air-quality/air-quality.repository.js';
 
 describe('StationService.getUnifiedStations pagination clamp', () => {
   it('clamps limit to 100 no matter what is requested', async () => {
@@ -11,6 +12,7 @@ describe('StationService.getUnifiedStations pagination clamp', () => {
         StationService,
         { provide: StationRepository, useValue: { findUnified } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
+        { provide: AirQualityRepository, useValue: {} },
       ],
     }).compile();
 
