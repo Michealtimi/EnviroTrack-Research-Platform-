@@ -199,9 +199,11 @@ export class AirQualityService {
 
   private static readonly DUPLICATE_WINDOW_MS = 60_000;
 
-  async findDuplicates(city: string) {
+  async findDuplicates(city: string, hours = 24) {
+    const safeHours = Math.min(hours, AirQualityService.MAX_WINDOW_HOURS);
+    const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
-      const readings = await this.airQualityRepo.findAll({ city });
+      const readings = await this.airQualityRepo.findAll({ city, since });
       const groups = new Map<string, AirQuality[]>();
 
       for (const r of readings) {

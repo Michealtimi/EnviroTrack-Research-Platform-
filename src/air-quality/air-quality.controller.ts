@@ -101,10 +101,11 @@ export class AirQualityController {
   }
 
   @Get('city/:city/duplicates')
-  @ApiOperation({ summary: 'Find candidate duplicate readings for a city (same station, identical pollutant values, within 60s)' })
-  async duplicates(@Param('city') city: string) {
+  @ApiOperation({ summary: 'Find candidate duplicate readings for a city over a recent window (default 24h, same station, identical pollutant values, within 60s)' })
+  @ApiQuery({ name: 'hours', required: false, type: Number })
+  async duplicates(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
     this.logger.log(`Request to find duplicate readings for city: ${city}`);
-    return this.airQualityService.findDuplicates(city);
+    return this.airQualityService.findDuplicates(city, hours);
   }
 
   @Get('station/:stationId/latest')
