@@ -218,7 +218,7 @@ export class AirQualityService {
       const duplicates: { stationId: number; pollutants: Record<string, number | null>; readingIds: string[]; count: number }[] = [];
       for (const group of groups.values()) {
         if (group.length < 2) continue;
-        const times = group.map((r) => r.createdAt.getTime());
+        const times = group.map((r) => (r.measuredAt ?? r.createdAt).getTime());
         const span = Math.max(...times) - Math.min(...times);
         if (span > AirQualityService.DUPLICATE_WINDOW_MS) continue;
 

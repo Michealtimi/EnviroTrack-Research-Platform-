@@ -249,7 +249,7 @@ export class StationService {
     const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
       const readings = await this.airQualityRepo.findAll({ stationId: id, since });
-      const hourBuckets = new Set(readings.map((r) => Math.floor(r.createdAt.getTime() / (60 * 60 * 1000))));
+      const hourBuckets = new Set(readings.map((r) => Math.floor((r.measuredAt ?? r.createdAt).getTime() / (60 * 60 * 1000))));
       const hoursWithReadings = hourBuckets.size;
       const completenessPercent = Math.round((hoursWithReadings / safeHours) * 1000) / 10;
 

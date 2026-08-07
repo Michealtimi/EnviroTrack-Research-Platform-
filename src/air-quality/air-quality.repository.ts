@@ -53,7 +53,12 @@ export class AirQualityRepository {
         where: {
           ...(filter?.city && { station: { city: filter.city } }), // filter by related station's city
           ...(filter?.stationId && { stationId: filter.stationId }),
-          ...(filter?.since && { createdAt: { gte: filter.since } }),
+          ...(filter?.since && {
+            OR: [
+              { measuredAt: { gte: filter.since } },
+              { measuredAt: null, createdAt: { gte: filter.since } },
+            ],
+          }),
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -131,7 +136,13 @@ export class AirQualityRepository {
     this.logger.log(`Aggregating air quality for city: ${city} since ${since.toISOString()}`);
     try {
       const result = await this.prisma.airQuality.aggregate({
-        where: { station: { city }, createdAt: { gte: since } },
+        where: {
+          station: { city },
+          OR: [
+            { measuredAt: { gte: since } },
+            { measuredAt: null, createdAt: { gte: since } },
+          ],
+        },
         _avg: { pm25: true, pm10: true, no2: true, o3: true },
         _count: true,
       });
