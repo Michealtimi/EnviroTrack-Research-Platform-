@@ -11,10 +11,15 @@ import {
   Req,
   Logger,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse, ApiHeader, ApiConsumes } from '@nestjs/swagger';
+import { parse } from 'csv-parse/sync';
 import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { HazardousReadingResponseDto } from './dto/air-quality-response.dto.js';
 import { SetSuspectDto } from './dto/set-suspect.dto.js';
@@ -56,6 +61,25 @@ export class AirQualityController {
     };
     const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
     return this.airQualityService.createReading(stationId, readingData, 'local', userId);
+  }
+
+  @Post('bulk-upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiOperation({ summary: 'Bulk-upload readings from a CSV file (columns: stationId, measuredAt required; pollutants and metadata optional)' })
+  async bulkUpload(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    let records: Record<string, string>[];
+    try {
+      records = parse(file.buffer, { columns: true, skip_empty_lines: true, trim: true });
+    } catch (err: unknown) {
+      throw new BadRequestException(`Could not parse CSV: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+
+    const userId = isAdminRequest(req.headers, this.configService) ? 'admin' : 'public';
+    return this.airQualityService.bulkUploadFromCsv(records, userId);
   }
 
   @Patch(':id/suspect')

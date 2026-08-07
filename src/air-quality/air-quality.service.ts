@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { AirQualityReadingResponseDto } from './dto/air-quality-response.dto.js';
+import { CreateAirQualityDto } from './dto/create-reading.dto.js';
 import { StationRepository } from '../stations/station.repository.js';
 import { AirQualityRepository } from './air-quality.repository.js';
 import { AirQuality } from '@prisma/client';
@@ -16,6 +19,7 @@ export class AirQualityService {
   private readonly logger = new Logger(AirQualityService.name);
 
   private static readonly MAX_WINDOW_HOURS = 720;
+  private static readonly MAX_CSV_ROWS = 1000;
   private static readonly WHO_LIMITS_UGM3: Record<string, number> = {
     pm25: 15,
     pm10: 45,
@@ -237,5 +241,83 @@ export class AirQualityService {
       this.logger.error(`Failed to find duplicates for city ${city}: ${msg}`);
       throw new InternalServerErrorException('Failed to find duplicate readings.');
     }
+  }
+
+  async bulkUploadFromCsv(rows: Record<string, string>[], userId: string) {
+    if (rows.length > AirQualityService.MAX_CSV_ROWS) {
+      throw new BadRequestException(
+        `CSV has ${rows.length} rows, exceeding the maximum of ${AirQualityService.MAX_CSV_ROWS}`,
+      );
+    }
+
+    const errors: { row: number; message: string }[] = [];
+    let inserted = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNumber = i + 2; // +1 for 0-index, +1 for the header row
+      const raw = rows[i];
+      try {
+        const stationId = Number(raw.stationId);
+        if (!Number.isInteger(stationId) || stationId < 1) {
+          throw new Error(`Invalid stationId "${raw.stationId}"`);
+        }
+        if (!raw.measuredAt) {
+          throw new Error('measuredAt is required');
+        }
+        const measuredAt = new Date(raw.measuredAt);
+        if (Number.isNaN(measuredAt.getTime())) {
+          throw new Error(`Invalid measuredAt "${raw.measuredAt}"`);
+        }
+
+        const dto = plainToInstance(CreateAirQualityDto, {
+          pm25: raw.pm25 ? Number(raw.pm25) : undefined,
+          pm10: raw.pm10 ? Number(raw.pm10) : undefined,
+          co: raw.co ? Number(raw.co) : undefined,
+          no2: raw.no2 ? Number(raw.no2) : undefined,
+          o3: raw.o3 ? Number(raw.o3) : undefined,
+          so2: raw.so2 ? Number(raw.so2) : undefined,
+          instrumentModel: raw.instrumentModel || undefined,
+          calibrationDate: raw.calibrationDate || undefined,
+          samplingDurationMinutes: raw.samplingDurationMinutes ? Number(raw.samplingDurationMinutes) : undefined,
+          weatherConditions: raw.weatherConditions || undefined,
+          temperature: raw.temperature ? Number(raw.temperature) : undefined,
+          humidity: raw.humidity ? Number(raw.humidity) : undefined,
+        });
+        const validationErrors = await validate(dto);
+        if (validationErrors.length > 0) {
+          const message = validationErrors
+            .map((e) => Object.values(e.constraints ?? {}).join(', '))
+            .join('; ');
+          throw new Error(message);
+        }
+
+        await this.createReading(
+          stationId,
+          {
+            pm25: dto.pm25 ?? null,
+            pm10: dto.pm10 ?? null,
+            co: dto.co ?? null,
+            no2: dto.no2 ?? null,
+            o3: dto.o3 ?? null,
+            so2: dto.so2 ?? null,
+            instrumentModel: dto.instrumentModel ?? null,
+            calibrationDate: dto.calibrationDate ? new Date(dto.calibrationDate) : null,
+            samplingDurationMinutes: dto.samplingDurationMinutes ?? null,
+            weatherConditions: dto.weatherConditions ?? null,
+            temperature: dto.temperature ?? null,
+            humidity: dto.humidity ?? null,
+          },
+          'local',
+          userId,
+          measuredAt,
+        );
+        inserted++;
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        errors.push({ row: rowNumber, message });
+      }
+    }
+
+    return { inserted, errors };
   }
 }
