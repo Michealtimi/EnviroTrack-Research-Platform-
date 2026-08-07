@@ -87,7 +87,7 @@ export class AirQualityService {
           action: 'create',
           resource: 'AirQuality',
           resourceId: createdReading.id,
-          changes: data,
+          changes: { ...data, measuredAt: measuredAt ?? null },
         });
       }
 
@@ -267,6 +267,12 @@ export class AirQualityService {
         const measuredAt = new Date(raw.measuredAt);
         if (Number.isNaN(measuredAt.getTime())) {
           throw new Error(`Invalid measuredAt "${raw.measuredAt}"`);
+        }
+        if (measuredAt.getTime() > Date.now()) {
+          throw new Error(`measuredAt "${raw.measuredAt}" is in the future`);
+        }
+        if (measuredAt.getFullYear() < 1970) {
+          throw new Error(`measuredAt "${raw.measuredAt}" is implausibly old`);
         }
 
         const dto = plainToInstance(CreateAirQualityDto, {

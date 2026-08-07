@@ -115,14 +115,16 @@ The API is documented with **Swagger** at **`http://localhost:3000/docs`** when 
 
 ### 📤 CSV bulk upload (offline capture)
 
-`POST /air-quality/bulk-upload` (public, multipart `file` field) accepts a CSV of readings
-captured offline and uploaded once back online. Required columns: `stationId`, `measuredAt`
-(ISO 8601 — when the reading actually happened, not when it's uploaded). All `CreateAirQualityDto`
-fields (pollutants + instrument/calibration/weather/temp/humidity metadata) are optional columns.
-Capped at 1000 rows per upload. Partial success: `{ inserted: 42, errors: [{ row: 7, message: "..." }] }` —
-one bad row never costs the rest of a multi-week field trip. Every P2 time-windowed endpoint
-(average, hazardous, duplicates, completeness) reads these readings by `measuredAt`, so a
-bulk-uploaded week shows up on the dates it actually happened.
+`POST /air-quality/bulk-upload` (public, multipart `file` field, capped at 2MB) accepts a CSV of
+readings captured offline and uploaded once back online. Required columns: `stationId`, `measuredAt`
+(ISO 8601, must not be in the future — when the reading actually happened, not when it's uploaded).
+All `CreateAirQualityDto` fields (pollutants + instrument/calibration/weather/temp/humidity metadata)
+are optional columns. Capped at 1000 rows per upload. Partial success:
+`{ inserted: 42, errors: [{ row: 7, message: "..." }] }` — one bad row never costs the rest of a
+multi-week field trip. Every P2 time-windowed endpoint (average, hazardous, duplicates, completeness)
+reads these readings by `measuredAt`, so a bulk-uploaded week shows up on the dates it actually
+happened — including `duplicates`, so if you're checking a bulk upload for accidental re-uploads,
+pass `?hours=` wide enough to cover the trip's actual date range, not just the default 24h.
 
 ### 🔐 Protected routes
 

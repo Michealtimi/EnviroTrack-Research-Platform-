@@ -71,6 +71,17 @@ describe('AirQualityService.bulkUploadFromCsv', () => {
     await expect(service.bulkUploadFromCsv(rows, 'public')).rejects.toThrow('1000');
   });
 
+  it('reports a per-row error for a measuredAt in the future', async () => {
+    const service = await buildService();
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const rows = [{ stationId: '1', measuredAt: future, pm25: '12' }];
+
+    const result = await service.bulkUploadFromCsv(rows, 'public');
+
+    expect(result.inserted).toBe(0);
+    expect(result.errors).toEqual([{ row: 2, message: expect.stringContaining('future') }]);
+  });
+
   it('returns an empty summary for a header-only (zero-row) upload', async () => {
     const service = await buildService();
 
