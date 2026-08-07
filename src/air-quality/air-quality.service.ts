@@ -50,6 +50,7 @@ export class AirQualityService {
     },
     source: 'local' | 'openaq' = 'local',
     userId?: string,
+    measuredAt?: Date | null,
   ) {
     try {
       const station = await this.stationRepo.findById(stationId);
@@ -65,6 +66,7 @@ export class AirQualityService {
         o3,
         so2,
         source,
+        measuredAt: measuredAt ?? null,
         instrumentModel: data.instrumentModel ?? null,
         calibrationDate: data.calibrationDate ?? null,
         samplingDurationMinutes: data.samplingDurationMinutes ?? null,

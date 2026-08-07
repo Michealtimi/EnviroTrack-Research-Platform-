@@ -60,6 +60,10 @@ export class AirQualityReadingResponseDto {
   @Expose()
   humidity: number | null;
 
+  @ApiProperty({ description: 'When this reading was actually measured (if different from when the server received it)', example: '2026-07-15T09:00:00.000Z', nullable: true })
+  @Expose()
+  measuredAt: Date | null;
+
   @ApiProperty({ description: 'Whether a steward has flagged this reading as suspect', example: false })
   @Expose()
   isSuspect: boolean;
