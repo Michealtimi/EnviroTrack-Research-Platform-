@@ -181,7 +181,7 @@ export class AirQualityService {
     const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
     try {
       const readings = await this.airQualityRepo.findAll({ city, since });
-      const withExceedances = readings.map((r: AirQuality) => {
+      const withExceedances = readings.map((r) => {
         const exceedances: { pollutant: string; value: number; limit: number; factor: number }[] = [];
         for (const [pollutant, limit] of Object.entries(AirQualityService.WHO_LIMITS_UGM3)) {
           const value = (r as unknown as Record<string, number | null>)[pollutant];
@@ -194,6 +194,7 @@ export class AirQualityService {
       const hazardous = withExceedances.filter((x) => x.exceedances.length > 0);
       return hazardous.map((x) => ({
         ...plainToInstance(AirQualityReadingResponseDto, x.reading, { excludeExtraneousValues: true }),
+        stationName: x.reading.station.name,
         exceedances: x.exceedances,
       }));
     } catch (error: unknown) {

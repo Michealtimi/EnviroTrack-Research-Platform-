@@ -28,9 +28,9 @@ describe('AirQualityService time-windowed analytics', () => {
 
   it('flags pm25 > 15 as hazardous (WHO 2021 24h guideline) and skips null readings', async () => {
     const findAll = jest.fn().mockResolvedValue([
-      { pm25: 16, pm10: null },
-      { pm25: 10, pm10: null },
-      { pm25: null, pm10: null },
+      { pm25: 16, pm10: null, station: { name: 'Station A' } },
+      { pm25: 10, pm10: null, station: { name: 'Station A' } },
+      { pm25: null, pm10: null, station: { name: 'Station A' } },
     ]);
     const module = await Test.createTestingModule({
       providers: [

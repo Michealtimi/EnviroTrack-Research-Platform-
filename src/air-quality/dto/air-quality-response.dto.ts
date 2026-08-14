@@ -92,6 +92,9 @@ export class ExceedanceDto {
 }
 
 export class HazardousReadingResponseDto extends AirQualityReadingResponseDto {
+  @ApiProperty({ description: 'Name of the station where this reading was taken', example: 'Ijebu-Ode Roadside' })
+  stationName: string;
+
   @ApiProperty({ description: 'Pollutants that exceeded their WHO 2021 guideline value, with the exceedance factor', type: [ExceedanceDto] })
   exceedances: ExceedanceDto[];
 }

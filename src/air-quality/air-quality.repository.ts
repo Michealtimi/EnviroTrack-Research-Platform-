@@ -46,7 +46,7 @@ export class AirQualityRepository {
   }
 
   /** Fetch all readings with optional filters */
-  async findAll(filter?: { city?: string; stationId?: number; since?: Date }): Promise<AirQuality[]> {
+  async findAll(filter?: { city?: string; stationId?: number; since?: Date }): Promise<(AirQuality & { station: { name: string } })[]> {
     this.logger.log(`Fetching all readings with filter: ${JSON.stringify(filter)}`);
     try {
       const result = await this.prisma.airQuality.findMany({
@@ -60,6 +60,7 @@ export class AirQualityRepository {
             ],
           }),
         },
+        include: { station: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
       });
       this.logger.log(`Found ${result.length} readings.`);

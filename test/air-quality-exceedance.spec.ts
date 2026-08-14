@@ -21,7 +21,7 @@ describe('AirQualityService exceedance factors', () => {
 
   it('computes exceedance factors for every pollutant over its WHO limit', async () => {
     const service = await buildService([
-      { id: 'r1', pm25: 18, pm10: null, co: null, no2: 325, o3: null, so2: null },
+      { id: 'r1', pm25: 18, pm10: null, co: null, no2: 325, o3: null, so2: null, station: { name: 'Station A' } },
     ]);
 
     const [result] = await service.getHazardousReadings('Lagos');
