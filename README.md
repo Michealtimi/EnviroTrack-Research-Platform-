@@ -151,6 +151,11 @@ O3 > 100 µg/m³, CO > 4000 µg/m³. Each hazardous reading's response includes 
 `exceedances` array — e.g. `{"pollutant": "no2", "value": 325, "limit": 25, "factor": 13}` —
 so a policy analyst can read "NO2 at this station is 13x the WHO limit" directly off the API.
 
+Add `?format=csv` to download the same data as a CSV — one row per exceedance (a reading with
+two exceeded pollutants produces two rows), columns `stationId, stationName, pollutant, value,
+limit, factor, measuredAt, isSuspect, readingId`. Ready to open directly in Excel/Sheets or feed
+into a report.
+
 ### 🩺 Sync health
 
 `GET /openaq/sync-history?limit=` (public, clamped to 100) returns the most recent OpenAQ

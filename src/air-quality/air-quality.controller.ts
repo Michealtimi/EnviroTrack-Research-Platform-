@@ -14,8 +14,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBody, ApiQuery, ApiResponse, ApiHeader, ApiConsumes } from '@nestjs/swagger';
@@ -25,6 +26,7 @@ import { HazardousReadingResponseDto } from './dto/air-quality-response.dto.js';
 import { SetSuspectDto } from './dto/set-suspect.dto.js';
 import { AirQualityService } from './air-quality.service.js';
 import { isAdminRequest, ApiKeyGuard } from '../common/guards/api-key.guard.js';
+import { formatHazardousReadingsAsCsv } from './hazardous-csv.util.js';
 
 @ApiTags('air-quality')
 @Controller('air-quality')
@@ -116,12 +118,28 @@ export class AirQualityController {
   }
 
   @Get('city/:city/hazardous')
-  @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 guideline values)' })
+  @ApiOperation({ summary: 'Get hazardous readings by city over a recent window (default 24h, WHO 2021 guideline values). Add ?format=csv for a CSV download.' })
   @ApiQuery({ name: 'hours', required: false, type: Number })
+  @ApiQuery({ name: 'format', required: false, description: 'Set to "csv" for a CSV download instead of JSON' })
   @ApiResponse({ status: 200, type: [HazardousReadingResponseDto] })
-  async hazardous(@Param('city') city: string, @Query('hours', new ParseIntPipe({ optional: true })) hours?: number) {
+  async hazardous(
+    @Param('city') city: string,
+    @Query('hours', new ParseIntPipe({ optional: true })) hours: number | undefined,
+    @Query('format') format: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     this.logger.log(`Request to get hazardous readings for city: ${city}`);
-    return this.airQualityService.getHazardousReadings(city, hours);
+    const readings = await this.airQualityService.getHazardousReadings(city, hours);
+
+    if (format === 'csv') {
+      const csv = formatHazardousReadingsAsCsv(readings);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="hazardous-${city}.csv"`);
+      res.send(csv);
+      return;
+    }
+
+    return readings;
   }
 
   @Get('city/:city/duplicates')
