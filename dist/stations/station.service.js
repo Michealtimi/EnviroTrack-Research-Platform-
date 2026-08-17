@@ -13,11 +13,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StationService = void 0;
 const common_1 = require("@nestjs/common");
 const station_repository_js_1 = require("./station.repository.js");
-let StationService = StationService_1 = class StationService {
+const audit_log_service_js_1 = require("../common/audit/audit-log.service.js");
+const air_quality_repository_js_1 = require("../air-quality/air-quality.repository.js");
+let StationService = class StationService {
+    static { StationService_1 = this; }
     stationRepo;
+    auditLog;
+    airQualityRepo;
     logger = new common_1.Logger(StationService_1.name);
-    constructor(stationRepo) {
+    static MAX_COMPLETENESS_WINDOW_HOURS = 720; // mirrors AirQualityService.MAX_WINDOW_HOURS
+    constructor(stationRepo, auditLog, airQualityRepo) {
         this.stationRepo = stationRepo;
+        this.auditLog = auditLog;
+        this.airQualityRepo = airQualityRepo;
     }
     // -----------------------------
     // ✅ Create a new local station
@@ -104,7 +112,7 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     // ✅ Update station
     // -----------------------------
-    async updateStation(id, data) {
+    async updateStation(id, data, userId) {
         this.logger.log(`Updating station ID: ${id}`);
         try {
             const station = await this.stationRepo.findById(id);
@@ -113,6 +121,13 @@ let StationService = StationService_1 = class StationService {
                 throw new common_1.NotFoundException(`Station with ID ${id} not found`);
             }
             const updated = await this.stationRepo.update(id, data);
+            await this.auditLog.log({
+                userId,
+                action: 'update',
+                resource: 'Station',
+                resourceId: String(id),
+                changes: { ...data },
+            });
             this.logger.log(`Station updated successfully: ${updated.id}`);
             return updated;
         }
@@ -127,13 +142,20 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     // ✅ Delete station
     // -----------------------------
-    async deleteStation(id) {
+    async deleteStation(id, userId) {
         this.logger.log(`Attempting to delete station ID: ${id}`);
         // First, ensure the station exists. This reuses the logic
         // from getStationById, which already throws a NotFoundException.
         await this.getStationById(id);
         try {
             await this.stationRepo.delete(id);
+            await this.auditLog.log({
+                userId,
+                action: 'soft_delete',
+                resource: 'Station',
+                resourceId: String(id),
+                changes: { deletedAt: new Date().toISOString() },
+            });
             this.logger.log(`Station deleted successfully: ${id}`);
             return { message: `Station ${id} deleted successfully` };
         }
@@ -191,10 +213,11 @@ let StationService = StationService_1 = class StationService {
     // -----------------------------
     // ✅ NEW: Unified stations (local + OpenAQ)
     // -----------------------------
-    async getUnifiedStations(city, country, source, page = 1, limit = 10) {
-        this.logger.log(`Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`);
+    async getUnifiedStations(city, country, source, page = 1, limit = 50) {
+        const safeLimit = Math.min(limit, 100);
+        this.logger.log(`Fetching unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${safeLimit}]`);
         try {
-            return await this.stationRepo.findUnified({ city, country, source }, { page, limit });
+            return await this.stationRepo.findUnified({ city, country, source }, { page, limit: safeLimit });
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -202,10 +225,41 @@ let StationService = StationService_1 = class StationService {
             throw new common_1.InternalServerErrorException('Failed to retrieve unified stations.');
         }
     }
+    // -----------------------------
+    // ✅ NEW: Reporting completeness for OpenAQ-synced stations
+    // -----------------------------
+    async getCompleteness(id, hours = 24) {
+        const safeHours = Math.min(hours, StationService_1.MAX_COMPLETENESS_WINDOW_HOURS);
+        const station = await this.getStationById(id); // throws NotFoundException if missing
+        if (station.source !== 'openaq') {
+            return { applicable: false, stationId: id };
+        }
+        const since = new Date(Date.now() - safeHours * 60 * 60 * 1000);
+        try {
+            const readings = await this.airQualityRepo.findAll({ stationId: id, since });
+            const hourBuckets = new Set(readings.map((r) => Math.floor((r.measuredAt ?? r.createdAt).getTime() / (60 * 60 * 1000))));
+            const hoursWithReadings = hourBuckets.size;
+            const completenessPercent = Math.round((hoursWithReadings / safeHours) * 1000) / 10;
+            return {
+                applicable: true,
+                stationId: id,
+                windowHours: safeHours,
+                hoursWithReadings,
+                completenessPercent,
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to compute completeness for station ${id}. Error: ${errorMessage}`);
+            throw new common_1.InternalServerErrorException('Failed to compute station completeness.');
+        }
+    }
 };
 exports.StationService = StationService;
 exports.StationService = StationService = StationService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [station_repository_js_1.StationRepository])
+    __metadata("design:paramtypes", [station_repository_js_1.StationRepository,
+        audit_log_service_js_1.AuditLogService,
+        air_quality_repository_js_1.AirQualityRepository])
 ], StationService);
 //# sourceMappingURL=station.service.js.map

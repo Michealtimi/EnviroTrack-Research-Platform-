@@ -16,7 +16,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OpenAQController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const api_key_guard_js_1 = require("../common/guards/api-key.guard.js");
 const openaq_service_js_1 = require("./openaq.service.js");
+const sync_history_query_dto_js_1 = require("./dto/sync-history-query.dto.js");
 let OpenAQController = OpenAQController_1 = class OpenAQController {
     openAQService;
     logger = new common_1.Logger(OpenAQController_1.name);
@@ -35,11 +37,17 @@ let OpenAQController = OpenAQController_1 = class OpenAQController {
         this.logger.log(`Received request for full OpenAQ sync.`);
         return this.openAQService.fullOpenAQSync(data);
     }
+    async syncHistory(query) {
+        this.logger.log(`Request for OpenAQ sync history [limit=${query.limit}]`);
+        return this.openAQService.getSyncHistory(query.limit);
+    }
 };
 exports.OpenAQController = OpenAQController;
 __decorate([
     (0, common_1.Post)('parameters/sync'),
-    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ parameters' }),
+    (0, common_1.UseGuards)(api_key_guard_js_1.ApiKeyGuard),
+    (0, swagger_1.ApiHeader)({ name: 'x-api-key', required: true, description: 'Admin API key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ parameters (requires admin API key)' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Parameters synced successfully.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -48,7 +56,9 @@ __decorate([
 ], OpenAQController.prototype, "syncParameters", null);
 __decorate([
     (0, common_1.Post)('measurements/sync'),
-    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ measurements' }),
+    (0, common_1.UseGuards)(api_key_guard_js_1.ApiKeyGuard),
+    (0, swagger_1.ApiHeader)({ name: 'x-api-key', required: true, description: 'Admin API key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Sync OpenAQ measurements (requires admin API key)' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Measurements synced successfully.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -57,13 +67,23 @@ __decorate([
 ], OpenAQController.prototype, "syncMeasurements", null);
 __decorate([
     (0, common_1.Post)('full-sync'),
-    (0, swagger_1.ApiOperation)({ summary: 'Full sync: parameters + measurements' }),
+    (0, common_1.UseGuards)(api_key_guard_js_1.ApiKeyGuard),
+    (0, swagger_1.ApiHeader)({ name: 'x-api-key', required: true, description: 'Admin API key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Full sync: parameters + measurements (requires admin API key)' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Full OpenAQ sync completed.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OpenAQController.prototype, "fullSync", null);
+__decorate([
+    (0, common_1.Get)('sync-history'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get recent OpenAQ sync run history (public, read-only)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [sync_history_query_dto_js_1.SyncHistoryQueryDto]),
+    __metadata("design:returntype", Promise)
+], OpenAQController.prototype, "syncHistory", null);
 exports.OpenAQController = OpenAQController = OpenAQController_1 = __decorate([
     (0, swagger_1.ApiTags)('OpenAQ'),
     (0, common_1.Controller)('openaq'),

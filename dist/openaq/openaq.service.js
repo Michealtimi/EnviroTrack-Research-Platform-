@@ -90,6 +90,7 @@ let OpenAQService = OpenAQService_1 = class OpenAQService {
                     co: stationMeasurements.find(m => m.parameterId === parameterNameToId['co'])?.value ?? null,
                     no2: stationMeasurements.find(m => m.parameterId === parameterNameToId['no2'])?.value ?? null,
                     o3: stationMeasurements.find(m => m.parameterId === parameterNameToId['o3'])?.value ?? null,
+                    so2: stationMeasurements.find(m => m.parameterId === parameterNameToId['so2'])?.value ?? null,
                 };
                 // The original logic created a new reading for each parameter. This new logic
                 // creates one reading with all parameters for a given station and time.
@@ -113,6 +114,31 @@ let OpenAQService = OpenAQService_1 = class OpenAQService {
         await this.syncMeasurements(measurements);
         this.logger.log(`✅ Full OpenAQ sync (processing incoming data) completed`);
         return { success: true };
+    }
+    async getSyncHistory(limit) {
+        const safeLimit = Math.min(limit, 100);
+        this.logger.log(`Fetching OpenAQ sync history [limit=${safeLimit}]`);
+        try {
+            const rows = await this.prisma.openAQSyncLog.findMany({
+                take: safeLimit,
+                orderBy: { createdAt: 'desc' },
+            });
+            // This route is intentionally public (operational visibility, not an admin action) -
+            // strip the raw infra error message before it leaves the server. The full row,
+            // error included, still lives in the DB for anyone with direct access to inspect.
+            return rows.map((row) => {
+                const details = row.details;
+                if (!details || !('error' in details))
+                    return row;
+                const { error: _error, ...safeDetails } = details;
+                return { ...row, details: safeDetails };
+            });
+        }
+        catch (error) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to fetch sync history: ${msg}`);
+            throw error;
+        }
     }
 };
 exports.OpenAQService = OpenAQService;

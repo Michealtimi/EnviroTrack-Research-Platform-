@@ -12,13 +12,16 @@ const prisma_service_js_1 = require("../prisma/prisma.service.js");
 const station_repository_js_1 = require("./station.repository.js");
 const station_service_js_1 = require("./station.service.js");
 const station_controller_js_1 = require("./station.controller.js");
+const api_key_guard_js_1 = require("../common/guards/api-key.guard.js");
+const audit_log_service_js_1 = require("../common/audit/audit-log.service.js");
+const air_quality_repository_js_1 = require("../air-quality/air-quality.repository.js");
 let StationModule = class StationModule {
 };
 exports.StationModule = StationModule;
 exports.StationModule = StationModule = __decorate([
     (0, common_1.Module)({
         controllers: [station_controller_js_1.StationController],
-        providers: [prisma_service_js_1.PrismaService, station_repository_js_1.StationRepository, station_service_js_1.StationService],
+        providers: [prisma_service_js_1.PrismaService, station_repository_js_1.StationRepository, station_service_js_1.StationService, api_key_guard_js_1.ApiKeyGuard, audit_log_service_js_1.AuditLogService, air_quality_repository_js_1.AirQualityRepository],
         exports: [station_service_js_1.StationService],
     })
 ], StationModule);

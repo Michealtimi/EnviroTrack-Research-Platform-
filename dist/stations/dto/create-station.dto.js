@@ -42,15 +42,17 @@ __decorate([
     __metadata("design:type", String)
 ], CreateStationDto.prototype, "country", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Latitude of the station', example: 51.5074 }),
+    (0, swagger_1.ApiProperty)({ description: 'Latitude of the station', example: 51.5074, minimum: -90, maximum: 90 }),
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Min)(-90),
+    (0, class_validator_1.Max)(90),
     __metadata("design:type", Number)
 ], CreateStationDto.prototype, "latitude", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Longitude of the station', example: -0.1278 }),
+    (0, swagger_1.ApiProperty)({ description: 'Longitude of the station', example: -0.1278, minimum: -180, maximum: 180 }),
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Min)(-180),
+    (0, class_validator_1.Max)(180),
     __metadata("design:type", Number)
 ], CreateStationDto.prototype, "longitude", void 0);
 let StationResponseDto = class StationResponseDto {

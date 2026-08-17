@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StationRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_js_1 = require("../prisma/prisma.service.js");
+const client_1 = require("@prisma/client");
 let StationRepository = StationRepository_1 = class StationRepository {
     prisma;
     logger = new common_1.Logger(StationRepository_1.name);
@@ -27,6 +28,9 @@ let StationRepository = StationRepository_1 = class StationRepository {
             return result;
         }
         catch (error) {
+            if (error instanceof client_1.Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                throw new common_1.BadRequestException(`A station named "${data.name}" already exists in "${data.city}".`);
+            }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to create station. Error: ${errorMessage}`);
             throw new common_1.InternalServerErrorException('Failed to create station in the database.');
@@ -37,6 +41,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         try {
             const result = await this.prisma.station.findMany({
                 where: {
+                    deletedAt: null,
                     ...(filter?.city && { city: filter.city }),
                     ...(filter?.country && { country: filter.country }),
                 },
@@ -54,7 +59,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
     async findById(id) {
         this.logger.log(`Fetching station by ID: ${id}`);
         try {
-            const result = await this.prisma.station.findUnique({ where: { id } });
+            const result = await this.prisma.station.findUnique({ where: { id, deletedAt: null } });
             if (result) {
                 this.logger.log(`Found station with ID: ${id}`);
             }
@@ -72,7 +77,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
     async findByCity(city) {
         this.logger.log(`Fetching stations in city: ${city}`);
         try {
-            const result = await this.prisma.station.findMany({ where: { city } });
+            const result = await this.prisma.station.findMany({ where: { city, deletedAt: null } });
             this.logger.log(`Found ${result.length} stations in ${city}.`);
             return result;
         }
@@ -107,21 +112,18 @@ let StationRepository = StationRepository_1 = class StationRepository {
         }
     }
     async delete(id) {
-        this.logger.log(`Deleting station with ID: ${id}`);
+        this.logger.log(`Soft-deleting station with ID: ${id}`);
         try {
-            // Use a transaction to ensure both deletes happen or neither do.
-            const result = await this.prisma.$transaction(async (tx) => {
-                // First, delete all related air quality readings
-                await tx.airQuality.deleteMany({ where: { stationId: id } });
-                // Then, delete the station
-                return tx.station.delete({ where: { id } });
+            const result = await this.prisma.station.update({
+                where: { id },
+                data: { deletedAt: new Date() },
             });
-            this.logger.log(`Station and its readings deleted successfully: ${result.id}`);
+            this.logger.log(`Station soft-deleted successfully: ${result.id}`);
             return result;
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            this.logger.error(`Failed to delete station ID ${id}. Error: ${errorMessage}`);
+            this.logger.error(`Failed to soft-delete station ID ${id}. Error: ${errorMessage}`);
             throw new common_1.InternalServerErrorException('Failed to delete station from the database.');
         }
     }
@@ -142,6 +144,7 @@ let StationRepository = StationRepository_1 = class StationRepository {
         const { page = 1, limit = 10 } = pagination || {};
         const skip = (page - 1) * limit;
         const where = {
+            deletedAt: null,
             ...(city && { city: { contains: city, mode: 'insensitive' } }),
             ...(country && { country }),
             ...(source && { source }),

@@ -13,6 +13,7 @@ const air_quality_repository_js_1 = require("./air-quality.repository.js");
 const station_repository_js_1 = require("../stations/station.repository.js");
 const air_quality_controller_js_1 = require("./air-quality.controller.js");
 const air_quality_service_js_1 = require("./air-quality.service.js");
+const audit_log_service_js_1 = require("../common/audit/audit-log.service.js");
 let AirQualityModule = class AirQualityModule {
 };
 exports.AirQualityModule = AirQualityModule;
@@ -24,6 +25,7 @@ exports.AirQualityModule = AirQualityModule = __decorate([
             air_quality_repository_js_1.AirQualityRepository,
             station_repository_js_1.StationRepository,
             air_quality_service_js_1.AirQualityService,
+            audit_log_service_js_1.AuditLogService,
         ],
         exports: [air_quality_service_js_1.AirQualityService],
     })

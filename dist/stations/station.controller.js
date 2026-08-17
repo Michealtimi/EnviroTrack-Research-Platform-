@@ -18,6 +18,8 @@ const common_1 = require("@nestjs/common");
 const station_service_js_1 = require("./station.service.js");
 const swagger_1 = require("@nestjs/swagger");
 const create_station_dto_js_1 = require("./dto/create-station.dto.js");
+const unified_station_query_dto_js_1 = require("./dto/unified-station-query.dto.js");
+const api_key_guard_js_1 = require("../common/guards/api-key.guard.js");
 let StationController = StationController_1 = class StationController {
     stationService;
     logger = new common_1.Logger(StationController_1.name);
@@ -39,13 +41,6 @@ let StationController = StationController_1 = class StationController {
         return this.stationService.getAllStations();
     }
     // -----------------------------
-    // ✅ Get station by ID
-    // -----------------------------
-    async findOne(id) {
-        this.logger.log(`Request to get station by ID: ${id}`);
-        return this.stationService.getStationById(id);
-    }
-    // -----------------------------
     // ✅ Get stations by city
     // -----------------------------
     async findByCity(city) {
@@ -53,25 +48,41 @@ let StationController = StationController_1 = class StationController {
         return this.stationService.getStationsByCity(city);
     }
     // -----------------------------
+    // ✅ NEW: Unified stations endpoint
+    // -----------------------------
+    async getUnifiedStations(query) {
+        this.logger.log(`Request to get unified stations ${JSON.stringify(query)}`);
+        return this.stationService.getUnifiedStations(query.city, query.country, query.source, query.page, query.limit);
+    }
+    // -----------------------------
+    // ✅ NEW: Reporting completeness for OpenAQ-synced stations
+    // -----------------------------
+    async completeness(id, hours) {
+        this.logger.log(`Request for completeness on station ${id}`);
+        return this.stationService.getCompleteness(id, hours);
+    }
+    // -----------------------------
+    // ✅ Get station by ID
+    // -----------------------------
+    async findOne(id) {
+        this.logger.log(`Request to get station by ID: ${id}`);
+        return this.stationService.getStationById(id);
+    }
+    // -----------------------------
     // ✅ Update station
     // -----------------------------
     async update(id, body) {
         this.logger.log(`Request to update station with ID: ${id}`);
-        return this.stationService.updateStation(id, body);
+        // ApiKeyGuard already rejected this request if the key didn't match - always "admin" here.
+        return this.stationService.updateStation(id, body, 'admin');
     }
     // -----------------------------
     // ✅ Delete station
     // -----------------------------
     async remove(id) {
         this.logger.log(`Request to delete station with ID: ${id}`);
-        return this.stationService.deleteStation(id);
-    }
-    // -----------------------------
-    // ✅ NEW: Unified stations endpoint
-    // -----------------------------
-    async getUnifiedStations(city, country, source, page = 1, limit = 10) {
-        this.logger.log(`Request to get unified stations [city=${city}, country=${country}, source=${source}, page=${page}, limit=${limit}]`);
-        return this.stationService.getUnifiedStations(city, country, source, page, limit);
+        // ApiKeyGuard already rejected this request if the key didn't match - always "admin" here.
+        return this.stationService.deleteStation(id, 'admin');
     }
 };
 exports.StationController = StationController;
@@ -92,14 +103,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get station by ID' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], StationController.prototype, "findOne", null);
-__decorate([
     (0, common_1.Get)('city/:city'),
     (0, swagger_1.ApiOperation)({ summary: 'Get stations in a city' }),
     __param(0, (0, common_1.Param)('city')),
@@ -108,8 +111,36 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "findByCity", null);
 __decorate([
+    (0, common_1.Get)('unified'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get unified list of stations (local + OpenAQ)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [unified_station_query_dto_js_1.UnifiedStationQueryDto]),
+    __metadata("design:returntype", Promise)
+], StationController.prototype, "getUnifiedStations", null);
+__decorate([
+    (0, common_1.Get)(':id/completeness'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get reporting completeness for an OpenAQ-synced station over a recent window (default 24h)' }),
+    (0, swagger_1.ApiQuery)({ name: 'hours', required: false, type: Number }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Query)('hours', new common_1.ParseIntPipe({ optional: true }))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], StationController.prototype, "completeness", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get station by ID' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StationController.prototype, "findOne", null);
+__decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Update a station' }),
+    (0, common_1.UseGuards)(api_key_guard_js_1.ApiKeyGuard),
+    (0, swagger_1.ApiHeader)({ name: 'x-api-key', required: true, description: 'Admin API key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a station (requires admin API key)' }),
     (0, swagger_1.ApiBody)({ type: create_station_dto_js_1.UpdateStationDto }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
@@ -119,29 +150,14 @@ __decorate([
 ], StationController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete a station' }),
+    (0, common_1.UseGuards)(api_key_guard_js_1.ApiKeyGuard),
+    (0, swagger_1.ApiHeader)({ name: 'x-api-key', required: true, description: 'Admin API key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a station (requires admin API key)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StationController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Get)('unified'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get unified list of stations (local + OpenAQ)' }),
-    (0, swagger_1.ApiQuery)({ name: 'city', required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'country', required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'source', required: false, enum: ['local', 'openaq'] }),
-    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
-    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
-    __param(0, (0, common_1.Query)('city')),
-    __param(1, (0, common_1.Query)('country')),
-    __param(2, (0, common_1.Query)('source')),
-    __param(3, (0, common_1.Query)('page')),
-    __param(4, (0, common_1.Query)('limit')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Object, Object]),
-    __metadata("design:returntype", Promise)
-], StationController.prototype, "getUnifiedStations", null);
 exports.StationController = StationController = StationController_1 = __decorate([
     (0, swagger_1.ApiTags)('stations'),
     (0, common_1.Controller)('stations'),

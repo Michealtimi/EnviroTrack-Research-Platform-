@@ -1,246 +1,134 @@
-# 🌿 EnviroTrack: Unified Environmental Research Platform
+# EnviroTrack
 
-**Topics:** #BackendEngineering | #DataEngineering | #EnvironmentalData | #NestJS | #OpenData | #ClimateTech
+Environmental data API for tracking air quality readings across monitoring stations — built as the backend for an MSc research platform. Ingests readings (manually, via CSV, or synced from [OpenAQ](https://explore.openaq.org)), tracks station metadata, and surfaces hazardous/exceedance reports against WHO 2021 air quality guideline values.
 
-**EnviroTrack** is a robust, modular backend system that serves as a unified platform to collect, store, and expose critical environmental data, with a primary focus on **air quality**. It aggregates data from multiple global APIs and user-defined local monitoring stations, providing a single, comprehensive source for environmental research, policy analysis, and climate-focused applications.
+## Tech stack
 
-Built on **NestJS (TypeScript)** and **PostgreSQL**, EnviroTrack simplifies the complexity of storing and combining environmental data from disparate sources by automating synchronization, transformation, and exposure via clean REST APIs.
+- [NestJS 11](https://nestjs.com/) (TypeScript, ESM)
+- PostgreSQL via [Prisma](https://www.prisma.io/) 6
+- [class-validator](https://github.com/typestack/class-validator) for request validation
+- Swagger/OpenAPI docs at `/docs`
+- Jest for tests
 
------
-
-## ✨ Features
-
-### Unified Data Ingestion (ETL)
-
-  * **Unified Data Model:** Combines local station data with data synced from multiple external sources (e.g., OpenAQ) into a single, queryable API.
-  * **Automated Data Sync:** A cron job runs regularly to fetch the latest air quality measurements from thousands of global monitoring stations.
-  * **Data Sources:** Currently integrates **OpenAQ API** (Air Quality) via an hourly sync job. NASA POWER and World Bank Data are planned — see Future Work.
-  * **Local Data Ingestion:** A dedicated REST API allows researchers to define their own "local" monitoring stations and submit air quality readings for them.
-  * **Admin-Protected Mutations:** Destructive and OpenAQ-sync-triggering routes (`DELETE /stations/:id`, `/openaq/*/sync`) require an `x-api-key` header — see "Protected routes" below. All reads and local station create/submit stay open in v1.
-
-### Architecture & API
-
-  * **RESTful API:** A clean, well-defined set of endpoints for managing stations and retrieving unified data, documented with **Swagger/OpenAPI**.
-  * **Scalable Architecture:** Built with **NestJS**, using **Prisma** for type-safe database access and a modular structure for easy extension.
-  * **Automated tests:** `npm test` (Jest) covers DTO validation, pagination clamping, the admin API-key guard, and the OpenAQ v3 sync mapper.
-  * **Dockerized Deployment:** Simplified deployment and portability using **Docker** and **Docker Compose**.
-
------
-
-## 🧩 Architecture Overview
-
-The platform uses an ETL (Extract, Transform, Load) approach to manage data from external sources and provides a unified access layer.
-
-```text
-[External APIs: OpenAQ / NASA / World Bank]
-           ↓
-[ETL Layer: Node.js/NestJS scripts for ingestion + transformation]
-           ↓
-[Database: PostgreSQL via Prisma ORM]
-           ↓
-[REST API: NestJS Backend]
-           ↓
-[Client/Dashboard (Optional)]
-```
-
-### ⚙️ Tech Stack
-
-| Layer | Technology | Details |
-| :--- | :--- | :--- |
-| **Backend** | **NestJS** (TypeScript) | Scalable, modular API framework. |
-| **Database** | **PostgreSQL** (**Prisma ORM**) | Reliable relational storage and type-safe database access. |
-| **ETL** | Node.js, Cron, Axios | Scripts for data extraction and scheduling. |
-| **Deployment** | Docker, Docker Compose | Containerized environment for portability. |
-| **Documentation** | Swagger / OpenAPI | Interactive API documentation. |
-
------
-
-## 🌱 Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing.
+## Getting started
 
 ### Prerequisites
 
-  * **Node.js** (v18 or later recommended)
-  * **Yarn** or **npm**
-  * **PostgreSQL** or **Docker**
-  * An **OpenAQ API Key** (required for automated sync)
+- Node.js 20+
+- Yarn
+- A PostgreSQL database (a free [Neon](https://neon.tech) instance works well)
 
-### Installation & Setup
+### Setup
 
-1.  **Clone the repository:**
-
-    ```bash
-    git clone https://github.com/Michealtimi/EnviroTrack-Research-Platform-.git
-    cd EnviroTrack-Research-Platform-
-    ```
-
-2.  **Install dependencies:**
-
-    ```bash
-    npm install
-    # or
-    # yarn install
-    ```
-
-3.  **Set up the database and app with Docker:**
-
-    ```bash
-    cp .env.example .env
-    # edit .env: set OPENAQ_API_KEY and ADMIN_API_KEY
-    docker compose up -d --build
-    docker compose exec app npx prisma migrate deploy
-    ```
-
-    The application will be running on `http://localhost:3000`, Swagger docs at `http://localhost:3000/docs`.
-
-    Prefer to run without Docker? Start a local Postgres, set `DATABASE_URL` in `.env` yourself, then run `npx prisma migrate deploy` and `npm run start:dev`.
-
------
-
-## 🏗️ API Usage
-
-The API is documented with **Swagger** at **`http://localhost:3000/docs`** when the application is running.
-
-### 🧪 Core API Endpoints
-
-| Endpoint | Description | Example |
-| :--- | :--- | :--- |
-| **`POST /stations`** | Create a new local monitoring station. | `.../stations` |
-| **`POST /air-quality/station/:stationId`** | Submit an air quality reading for a local station. | `.../air-quality/station/1` |
-| **`GET /stations/unified`** | **Primary endpoint for analysis.** Retrieves stations from both OpenAQ and local database, with powerful filtering (city, source, etc.), paginated (limit clamped to 100). | `.../stations/unified?city=London` |
-| **`GET /air-quality/city/:city/average`** | Average pollution for a city over a recent window (default 24h, `?hours=` to override). | `.../air-quality/city/Lagos/average?hours=48` |
-| **`GET /air-quality/city/:city/hazardous`** | Readings exceeding WHO 2021 guideline levels over a recent window. | `.../air-quality/city/Lagos/hazardous` |
-| **`DELETE /stations/:id`** | Delete a station (admin only). | `.../stations/1` |
-
-### 📤 CSV bulk upload (offline capture)
-
-`POST /air-quality/bulk-upload` (public, multipart `file` field, capped at 2MB) accepts a CSV of
-readings captured offline and uploaded once back online. Required columns: `stationId`, `measuredAt`
-(ISO 8601, must not be in the future — when the reading actually happened, not when it's uploaded).
-All `CreateAirQualityDto` fields (pollutants + instrument/calibration/weather/temp/humidity metadata)
-are optional columns. Capped at 1000 rows per upload. Partial success:
-`{ inserted: 42, errors: [{ row: 7, message: "..." }] }` — one bad row never costs the rest of a
-multi-week field trip. Every P2 time-windowed endpoint (average, hazardous, duplicates, completeness)
-reads these readings by `measuredAt`, so a bulk-uploaded week shows up on the dates it actually
-happened — including `duplicates`, so if you're checking a bulk upload for accidental re-uploads,
-pass `?hours=` wide enough to cover the trip's actual date range, not just the default 24h.
-
-### 🔐 Protected routes
-
-`DELETE /stations/:id` and the `/openaq/*/sync` routes require an `x-api-key` header
-matching the `ADMIN_API_KEY` environment variable. All read routes and local station
-create/submit routes are open in v1.
-
-### 🗑️ Deletion is non-destructive
-
-`DELETE /stations/:id` soft-deletes (sets `deletedAt`) rather than removing the row —
-research data is never hard-deleted by this API. A soft-deleted station 404s on every
-`/stations` read route (direct lookup, list, city, unified); its historical readings
-remain queryable through `/air-quality` by design — deleting a station never deletes
-its measurement history. Known limitation: creating a new station with the same
-name+city as a previously deleted one will still fail as "already exists," since the
-uniqueness check doesn't yet account for `deletedAt`.
-
-### ⚠️ Hazardous reading thresholds & exceedance factors
-
-`GET /air-quality/city/:city/hazardous` flags a reading as hazardous when any of its six
-pollutants exceeds its WHO 2021 Air Quality Guideline value over the requested window
-(default 24h): PM2.5 > 15 µg/m³, PM10 > 45 µg/m³, NO2 > 25 µg/m³, SO2 > 40 µg/m³,
-O3 > 100 µg/m³, CO > 4000 µg/m³. Each hazardous reading's response includes an
-`exceedances` array — e.g. `{"pollutant": "no2", "value": 325, "limit": 25, "factor": 13}` —
-so a policy analyst can read "NO2 at this station is 13x the WHO limit" directly off the API.
-
-Add `?format=csv` to download the same data as a CSV — one row per exceedance (a reading with
-two exceeded pollutants produces two rows), columns `stationId, stationName, pollutant, value,
-limit, factor, measuredAt, isSuspect, readingId`. Ready to open directly in Excel/Sheets or feed
-into a report.
-
-### 🩺 Sync health
-
-`GET /openaq/sync-history?limit=` (public, clamped to 100) returns the most recent OpenAQ
-sync log entries — one per phase (`stations`/`measurements`) per hourly run, each with a
-`success`/`failed` status and a `details` object (`synced`, `failed`, `durationMs`). This is
-how you tell whether the cron is silently failing instead of finding out from stale data.
-The raw error message on a failed row is stored but not exposed on this public endpoint —
-it's stripped before the response is sent, since this route requires no admin key.
-
-### 🧪 Reading metadata
-
-`POST /air-quality/station/:stationId` now accepts optional `instrumentModel`,
-`calibrationDate`, `samplingDurationMinutes`, `weatherConditions`, `temperature`, and
-`humidity` fields alongside the pollutant values — all returned back on every reading.
-
-### 🚩 Suspect flag
-
-`PATCH /air-quality/:id/suspect` (admin key required) marks a reading `{ isSuspect, suspectReason }`
-without deleting it — research data is never destroyed, only annotated.
-
-### 🔁 Duplicate detection
-
-`GET /air-quality/city/:city/duplicates?hours=` (public, default 24h) surfaces candidate
-duplicate readings — same station, identical pollutant values, submitted within 60 seconds
-of each other — for a human to review. Nothing is auto-flagged or auto-deleted.
-
-### 📊 Completeness
-
-`GET /stations/:id/completeness?hours=` (public, default 24h) reports what fraction of
-expected hours an OpenAQ-synced station actually reported in. Local stations return
-`{ applicable: false }` — there's no fixed cadence to measure a field visit against.
-
------
-
-## 🔧 How It Works & Project Structure
-
-The platform's core logic is managed by the following services and modules:
-
-  * **OpenAQSyncService:** Runs an **hourly cron job** to fetch, upsert stations, and save the latest air quality measurements from the OpenAQ API.
-  * **StationModule/AirQualityModule:** Manages the CRUD logic for both local and OpenAQ-sourced station and measurement data.
-  * **PrismaService:** Centralizes the database connection and client for the entire application.
-
-### 🧰 Project Structure
-
-```text
-src/
-├── ingestion/       # ETL logic (e.g., OpenAQSyncService)
-├── transformation/  # Data cleaning, normalization (currently integrated into services)
-├── stations/        # Module for station management
-├── air-quality/     # Module for measurement management
-├── database/        # Prisma + PostgreSQL setup
-└── tests/           # Unit & integration tests
+```bash
+yarn install
+cp .env.example .env
 ```
 
------
+Fill in `.env`:
 
-## 🌍 Data Sources
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `OPENAQ_API_KEY` | Free key from [explore.openaq.org](https://explore.openaq.org), used by the OpenAQ sync |
+| `ADMIN_API_KEY` | Random string. Required as `x-api-key` header on all write endpoints and the OpenAQ sync routes |
+| `OPENAQ_SYNC_COUNTRY_ISO` | Optional. Restricts the scheduled OpenAQ sync to one country (ISO code) |
+| `OPENAQ_SYNC_MAX_LOCATIONS` | Optional. Caps how many stations the scheduled sync pulls per run |
+| `PORT` | Defaults to `3000` |
 
-  * **OpenAQ API** (Air Quality)
-  * **NASA POWER API** (Future)
-  * **World Bank Data API** (Future)
+Apply the database schema:
 
------
+```bash
+yarn prisma:generate
+yarn prisma:migrate
+```
 
-## ✨ Future Work
+Run it:
 
-  * Integrate the NASA POWER and World Bank APIs fully to expand the dataset.
-  * Add data visualization dashboard (React/Next.js).
-  * Add **ML module for pollution prediction**.
-  * Add protected API endpoint to trigger manual syncs.
+```bash
+yarn start:dev
+```
 
------
+API is now at `http://localhost:3000`, interactive docs at `http://localhost:3000/docs`.
 
-## 💡 Author
+## Scripts
 
-**Micheal Agunbiade**
+| Command | Purpose |
+|---|---|
+| `yarn start:dev` | Run with hot reload |
+| `yarn build` | Compile to `dist/` |
+| `yarn test` | Run the Jest suite |
+| `yarn lint` | ESLint (`--fix`) |
+| `yarn format` | Prettier |
+| `yarn prisma:studio` | Browse the database in Prisma Studio |
 
-Backend & Data Engineer | Environmental Informatics Enthusiast
+## API overview
 
-  * 📧 michealagunbiade1@gmail.com
-  * 🌐 [github.com/Michealtimi](https://www.google.com/search?q=https://github.com/Michealtimi)
-  * 🔗 [linkedin.com/in/micheal-agunbiade](https://www.google.com/search?q=https://linkedin.com/in/micheal-agunbiade)
+All endpoints are namespaced under `/stations`, `/air-quality`, and `/openaq`. Full request/response schemas are in Swagger at `/docs`. Endpoints marked 🔒 require an `x-api-key` header matching `ADMIN_API_KEY`. All endpoints are rate-limited to 100 requests/minute per IP.
 
------
+### Stations
 
-## 🧾 License
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/stations` | Create a station |
+| `GET` | `/stations` | List all stations |
+| `GET` | `/stations/city/:city` | Stations in a city |
+| `GET` | `/stations/unified` | Combined local + OpenAQ stations, paginated |
+| `GET` | `/stations/:id/completeness` | Reporting completeness over a time window |
+| `GET` | `/stations/:id` | Get one station |
+| `PATCH` | `/stations/:id` | 🔒 Update a station |
+| `DELETE` | `/stations/:id` | 🔒 Soft-delete a station |
 
-This project is released under the **MIT License**. You are free to use and modify it.
+### Air quality
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/air-quality/station/:stationId` | 🔒 Create a reading |
+| `POST` | `/air-quality/bulk-upload` | 🔒 Bulk-import readings from a CSV file (≤2MB, ≤1000 rows) |
+| `PATCH` | `/air-quality/:id/suspect` | 🔒 Flag/unflag a reading as suspect |
+| `GET` | `/air-quality/station/:stationId` | Readings for a station |
+| `GET` | `/air-quality/city/:city` | Readings for a city |
+| `GET` | `/air-quality/city/:city/average` | Average pollution over a time window |
+| `GET` | `/air-quality/city/:city/hazardous` | Readings exceeding WHO limits. Add `?format=csv` for a CSV download |
+| `GET` | `/air-quality/city/:city/duplicates` | Candidate duplicate readings |
+| `GET` | `/air-quality/station/:stationId/latest` | Latest reading for a station |
+
+### OpenAQ sync
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/openaq/parameters/sync` | 🔒 Push-sync OpenAQ parameters |
+| `POST` | `/openaq/measurements/sync` | 🔒 Push-sync OpenAQ measurements |
+| `POST` | `/openaq/full-sync` | 🔒 Push-sync both |
+| `GET` | `/openaq/sync-history` | View sync run history |
+
+A separate scheduled job (`src/openaq/openaq-sync.service.ts`) also pulls from the OpenAQ v3 API on a cron and writes directly into the `Station`/`AirQuality` tables above.
+
+## Example requests
+
+```bash
+# Create a station
+curl -X POST http://localhost:3000/stations \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Lagos Central","city":"Lagos","country":"NG","latitude":6.5244,"longitude":3.3792}'
+
+# Add a reading (requires admin key)
+curl -X POST http://localhost:3000/air-quality/station/1 \
+  -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"pm25": 55.2, "no2": 30.1, "measuredAt": "2026-08-14T08:00:00Z"}'
+
+# Hazardous readings for a city, as CSV
+curl "http://localhost:3000/air-quality/city/Lagos/hazardous?hours=24&format=csv" -o hazardous.csv
+```
+
+## Testing
+
+```bash
+yarn test
+```
+
+Unit tests live in `test/*.spec.ts` (mocked Prisma layer — no live database required).
+
+## License
+
+MIT

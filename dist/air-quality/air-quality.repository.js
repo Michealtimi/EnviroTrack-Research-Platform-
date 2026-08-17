@@ -65,7 +65,14 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
                 where: {
                     ...(filter?.city && { station: { city: filter.city } }), // filter by related station's city
                     ...(filter?.stationId && { stationId: filter.stationId }),
+                    ...(filter?.since && {
+                        OR: [
+                            { measuredAt: { gte: filter.since } },
+                            { measuredAt: null, createdAt: { gte: filter.since } },
+                        ],
+                    }),
                 },
+                include: { station: { select: { name: true } } },
                 orderBy: { createdAt: 'desc' },
             });
             this.logger.log(`Found ${result.length} readings.`);
@@ -89,6 +96,20 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Failed to delete reading with ID ${id}. Error: ${errorMessage}`);
             throw new common_1.InternalServerErrorException('Failed to delete reading.');
+        }
+    }
+    /** Update a reading (used for the suspect-flag endpoint) */
+    async update(id, data) {
+        this.logger.log(`Updating reading with ID: ${id}`);
+        try {
+            const result = await this.prisma.airQuality.update({ where: { id }, data });
+            this.logger.log(`Successfully updated reading with ID: ${id}`);
+            return result;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Failed to update reading with ID ${id}. Error: ${errorMessage}`);
+            throw new common_1.InternalServerErrorException('Failed to update reading.');
         }
     }
     /* ----------------- ADVANCED QUERIES ----------------- */
@@ -123,11 +144,17 @@ let AirQualityRepository = AirQualityRepository_1 = class AirQualityRepository {
         }
     }
     /** Aggregate average by city */
-    async aggregateByCity(city) {
-        this.logger.log(`Aggregating air quality for city: ${city}`);
+    async aggregateByCity(city, since) {
+        this.logger.log(`Aggregating air quality for city: ${city} since ${since.toISOString()}`);
         try {
             const result = await this.prisma.airQuality.aggregate({
-                where: { station: { city } },
+                where: {
+                    station: { city },
+                    OR: [
+                        { measuredAt: { gte: since } },
+                        { measuredAt: null, createdAt: { gte: since } },
+                    ],
+                },
                 _avg: { pm25: true, pm10: true, no2: true, o3: true },
                 _count: true,
             });

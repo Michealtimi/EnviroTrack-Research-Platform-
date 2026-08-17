@@ -39,7 +39,9 @@ export class AirQualityController {
   ) {}
 
   @Post('station/:stationId')
-  @ApiOperation({ summary: 'Create a new air quality reading for a station' })
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
+  @ApiOperation({ summary: 'Create a new air quality reading for a station (requires admin API key)' })
   @ApiBody({ type: CreateAirQualityDto })
   async create(
     @Param('stationId', ParseIntPipe) stationId: number,
@@ -66,10 +68,12 @@ export class AirQualityController {
   }
 
   @Post('bulk-upload')
+  @UseGuards(ApiKeyGuard)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } })) // 2MB - well over 1000 rows of CSV text
   @ApiConsumes('multipart/form-data')
+  @ApiHeader({ name: 'x-api-key', required: true, description: 'Admin API key' })
   @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
-  @ApiOperation({ summary: 'Bulk-upload readings from a CSV file (columns: stationId, measuredAt required; pollutants and metadata optional)' })
+  @ApiOperation({ summary: 'Bulk-upload readings from a CSV file (requires admin API key; columns: stationId, measuredAt required; pollutants and metadata optional)' })
   async bulkUpload(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     if (!file) throw new BadRequestException('No file uploaded');
 
