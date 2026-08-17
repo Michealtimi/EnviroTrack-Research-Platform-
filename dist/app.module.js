@@ -13,6 +13,7 @@ const core_1 = require("@nestjs/core");
 const config_1 = require("@nestjs/config");
 const schedule_1 = require("@nestjs/schedule");
 const throttler_1 = require("@nestjs/throttler");
+const app_controller_js_1 = require("./app.controller.js");
 const station_module_js_1 = require("./stations/station.module.js");
 const air_quality_module_js_1 = require("./air-quality/air-quality.module.js");
 const openaq_module_js_1 = require("./openaq/openaq.module.js");
@@ -29,6 +30,7 @@ exports.AppModule = AppModule = __decorate([
             air_quality_module_js_1.AirQualityModule,
             openaq_module_js_1.OpenAQModule,
         ],
+        controllers: [app_controller_js_1.AppController],
         providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })
 ], AppModule);

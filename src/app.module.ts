@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { AppController } from './app.controller.js';
 import { StationModule } from './stations/station.module.js';
 import { AirQualityModule } from './air-quality/air-quality.module.js';
 import { OpenAQModule } from './openaq/openaq.module.js';
@@ -17,6 +18,7 @@ import { OpenAQModule } from './openaq/openaq.module.js';
     AirQualityModule,
     OpenAQModule,
   ],
+  controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
